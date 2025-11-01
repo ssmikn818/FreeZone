@@ -3,11 +3,10 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import LandingPage from './components/LandingPage';
 import CurationPage from './components/GuidePage';
-import IndustryPage from './components/IndustryPage';
 import ContractPage from './components/ContractPage';
 import DepositPage from './components/DepositPage';
 import SettlementPage from './components/SettlementPage';
-import GuaranteePage from './components/ProtectionPage';
+import GuaranteePage from './components/GuaranteePage';
 import { Tab } from './types';
 
 const App: React.FC = () => {
@@ -19,8 +18,6 @@ const App: React.FC = () => {
         return <LandingPage setActiveTab={setActiveTab} />;
       case Tab.Curation:
         return <CurationPage />;
-      case Tab.Industry:
-        return <IndustryPage setActiveTab={setActiveTab} />;
       case Tab.Contract:
         return <ContractPage />;
       case Tab.Deposit:

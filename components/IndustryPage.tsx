@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Tab } from '../types';
+// Fix: Replaced missing 'ClipboardListIcon' import with a newly created icon in 'Icons.tsx'.
 import { PaletteIcon, CodeIcon, BriefcaseIcon, LightBulbIcon, ClipboardListIcon } from './Icons';
 
 interface IndustryPageProps {

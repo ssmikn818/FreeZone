@@ -17,7 +17,6 @@ const Footer: React.FC<FooterProps> = ({ setActiveTab }) => {
     ],
     resources: [
       { name: '가이드', tab: Tab.Curation },
-      { name: '업계별', tab: Tab.Industry },
     ],
   };
 

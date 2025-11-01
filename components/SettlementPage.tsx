@@ -1,5 +1,5 @@
 import React from 'react';
-import { SettlementIcon, LightBulbIcon } from './Icons';
+import { SettlementIcon, DocumentDuplicateIcon, ArrowUpRightIcon, ScaleIcon } from './Icons';
 import { Tab } from '../types';
 
 interface SettlementPageProps {
@@ -10,7 +10,20 @@ const sampleSettlements = [
   { id: 'S2024-002', title: '마케팅 콘텐츠 제작', amount: '3,000,000원', status: '정산 완료', settlementDate: '2024.07.05', taxInvoice: '발행 완료', isTutorial: true },
   { id: 'S2024-001', title: '웹사이트 개발 프로젝트', amount: '12,000,000원', status: '정산 완료', settlementDate: '2024.05.15', taxInvoice: '발행 완료' },
   { id: 'S2023-015', title: '로고 디자인', amount: '1,500,000원', status: '정산 완료', settlementDate: '2023.12.20', taxInvoice: '발행 완료' },
+  { id: 'S2023-014', title: 'SNS 광고 캠페인', amount: '4,500,000원', status: '정산 완료', settlementDate: '2023.11.30', taxInvoice: '발행 완료' },
 ];
+
+const StatCard: React.FC<{ icon: React.ReactElement<{ className?: string }>, title: string, value: string, color: string }> = ({ icon, title, value, color }) => (
+    <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700 flex items-center space-x-4">
+        <div className={`p-3 rounded-full bg-${color}-500/10`}>
+            {React.cloneElement(icon, { className: `h-6 w-6 text-${color}-400` })}
+        </div>
+        <div>
+            <p className="text-sm text-slate-400">{title}</p>
+            <p className="text-2xl font-bold text-slate-100">{value}</p>
+        </div>
+    </div>
+);
 
 
 const SettlementPage: React.FC<SettlementPageProps> = ({ setActiveTab }) => {
@@ -27,43 +40,31 @@ const SettlementPage: React.FC<SettlementPageProps> = ({ setActiveTab }) => {
           </p>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 lg:grid-cols-5 gap-16 items-start">
-          {/* Left Column: CTA */}
-          <div className="lg:col-span-2 space-y-6 lg:sticky lg:top-24">
-            <h2 className="text-3xl font-bold text-slate-100">신속·정확한 정산</h2>
-            <p className="text-slate-400">
-              프로젝트가 완료되면, 계약서에 명시된 기준에 따라 검수를 진행하고 예치된 대금이 즉시 정산됩니다. 모든 내역은 투명하게 기록됩니다.
-            </p>
-            <div className="space-y-4">
-                <button className="w-full inline-flex items-center justify-center px-6 py-3 border border-slate-600 text-base font-bold rounded-full text-slate-300 bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-cyan-500 transition-colors">
-                    세금계산서 일괄 발행
-                </button>
-                <div className="text-center text-sm pt-2">
-                    <p className="text-slate-500">
-                        혹시 문제가 생겼나요?{' '}
-                        <button 
-                            onClick={() => setActiveTab(Tab.Guarantee)} 
-                            className="font-semibold text-cyan-400 hover:underline focus:outline-none whitespace-nowrap"
-                        >
-                            분쟁 중재 요청하기
-                        </button>
-                    </p>
+        <div className="mt-20 max-w-6xl mx-auto">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                <StatCard icon={<SettlementIcon />} title="올해 총 정산 금액" value="15,000,000 원" color="cyan" />
+                <StatCard icon={<ArrowUpRightIcon />} title="연간 예상 소득" value="~ 34,000,000 원" color="slate" />
+            </div>
+
+            <div className="bg-slate-800/50 rounded-2xl shadow-lg border border-cyan-500/20 p-8 mb-10 text-center">
+                <h3 className="text-xl font-bold text-slate-100">월말 정산, 번거로우셨죠?</h3>
+                <p className="text-slate-400 mt-2">클릭 한 번으로 여러 건의 세금계산서를 발행하고, 분쟁 발생 시 전문가의 도움을 받으세요.</p>
+                <div className="mt-6 w-full sm:w-auto flex flex-col sm:flex-row gap-2 justify-center">
+                    <button className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-bold rounded-full text-white bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 transition-all transform hover:scale-105 whitespace-nowrap">
+                        <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
+                        세금계산서 일괄 발행
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab(Tab.Guarantee)}
+                        className="inline-flex items-center justify-center px-5 py-3 border border-slate-600 text-base font-bold rounded-full text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors whitespace-nowrap"
+                    >
+                       <ScaleIcon className="h-5 w-5 mr-2" />
+                        분쟁 중재 요청
+                    </button>
                 </div>
             </div>
-          </div>
 
-          {/* Right Column: Example Dashboard */}
-          <div className="lg:col-span-3">
-            <div className="bg-fuchsia-900/30 p-4 rounded-lg border border-fuchsia-700/50 mb-6 flex items-start space-x-3">
-              <LightBulbIcon className="h-6 w-6 text-fuchsia-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-bold text-fuchsia-300">정산 내역 미리보기</h3>
-                <p className="text-sm text-slate-300 mt-1">
-                  완료된 프로젝트의 정산 내역이 여기에 기록됩니다. 모든 과정을 투명하게 확인하고 소득 증빙 자료로도 활용할 수 있습니다.
-                </p>
-              </div>
-            </div>
-            
+            <h2 className="text-2xl font-bold text-slate-100 mb-6">최근 정산 내역</h2>
             <div className="bg-slate-800/50 rounded-2xl shadow-2xl border border-slate-700 overflow-x-auto">
                 <table className="w-full text-left min-w-[640px]">
                     <thead className="border-b border-slate-700">
@@ -76,7 +77,7 @@ const SettlementPage: React.FC<SettlementPageProps> = ({ setActiveTab }) => {
                     </thead>
                     <tbody>
                         {sampleSettlements.map((item) => (
-                            <tr key={item.id} className={`border-b border-slate-800 hover:bg-slate-800 transition-colors ${item.isTutorial ? 'ring-2 ring-fuchsia-500/50' : ''}`}>
+                            <tr key={item.id} className={`border-b border-slate-800 last:border-b-0 hover:bg-slate-800 transition-colors ${item.isTutorial ? 'ring-2 ring-fuchsia-500/50' : ''}`}>
                                 <td className="px-6 py-4">
                                      <div className="flex items-center space-x-2">
                                       <p className="font-semibold text-slate-100">{item.title}</p>
@@ -86,7 +87,9 @@ const SettlementPage: React.FC<SettlementPageProps> = ({ setActiveTab }) => {
                                 </td>
                                 <td className="px-6 py-4 text-slate-100 font-mono text-right">{item.amount}</td>
                                 <td className="px-6 py-4 text-center">
-                                     <span className="text-sm text-slate-300">{item.taxInvoice}</span>
+                                     <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${
+                                         item.taxInvoice === '발행 완료' ? 'bg-teal-500/20 text-teal-400' : 'bg-slate-700 text-slate-400'
+                                     }`}>{item.taxInvoice}</span>
                                 </td>
                                 <td className="px-6 py-4 text-slate-400 text-right">{item.settlementDate}</td>
                             </tr>
@@ -95,7 +98,6 @@ const SettlementPage: React.FC<SettlementPageProps> = ({ setActiveTab }) => {
                 </table>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );

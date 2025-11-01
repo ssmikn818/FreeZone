@@ -7,5 +7,4 @@ export const NAV_TABS = [
   Tab.Settlement,
   Tab.Guarantee,
   Tab.Curation,
-  Tab.Industry,
 ];
