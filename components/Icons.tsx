@@ -124,7 +124,7 @@ export const DocumentDuplicateIcon: React.FC<React.SVGProps<SVGSVGElement>> = (p
 
 export const ClipboardIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25V4.5A2.25 2.25 0 019 2.25h1.5a2.25 2.25 0 012.25 2.25v0A2.25 2.25 0 0012 5.25v0a2.25 2.25 0 012.25-2.25h1.5a2.25 2.25 0 012.166 1.638c.16.575.25 1.18.25 1.812v1.5a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25v-1.5c0-.632.09-1.237.25-1.812M12 15.75v3.375c0 .621-.504 1.125-1.125 1.125h-3.75a1.125 1.125 0 01-1.125-1.125V15.75m3.75 0v-1.5a2.25 2.25 0 00-2.25-2.25h-1.5a2.25 2.25 0 00-2.25 2.25v1.5m3.75 0h-3.75" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25V4.5A2.25 2.25 0 019 2.25h1.5a2.25 2.25 0 012.25 2.25v.093c.053-.028.108-.052.166-.073zM15.75 9.75v5.625c0 .621-.504 1.125-1.125 1.125H9.375c-.621 0-1.125-.504-1.125-1.125V9.75m5.625 0a2.25 2.25 0 00-2.25-2.25h-1.5a2.25 2.25 0 00-2.25 2.25m5.625 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25V10.5a2.25 2.25 0 012.25-2.25h1.5a2.25 2.25 0 012.25 2.25v.093c-.053-.028-.108-.052-.166-.073z" />
     </svg>
 );
 
@@ -154,7 +154,7 @@ export const QuestionMarkCircleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
 
 export const ShareIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 100-2.186m0 2.186v-7.5" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186 2.25 2.25 0 000-2.186zM16.783 5.593a2.25 2.25 0 100 2.186 2.25 2.25 0 000-2.186zM16.783 16.217a2.25 2.25 0 100 2.186 2.25 2.25 0 000-2.186zM8.61 12.31l6.75-3.927M8.61 13.875l6.75 3.927" />
   </svg>
 );
 
@@ -326,6 +326,12 @@ export const GavelIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 3.75l6 6M21 9.75l-6-6" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 21l-6-6" />
     </svg>
+);
+
+export const BellIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+  </svg>
 );
 
 export const SignatureIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (

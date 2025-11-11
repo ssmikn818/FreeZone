@@ -123,6 +123,7 @@ const SolutionCard: React.FC<{
     flow: { name: string; details: string; tab: Tab };
     onFlowClick: (tab: Tab) => void;
 }> = ({ problem, solution, flow, onFlowClick }) => {
+    const isActionable = flow.tab === Tab.Contract;
     return (
         <div className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden">
             <div className="p-6">
@@ -138,14 +139,19 @@ const SolutionCard: React.FC<{
                     </div>
                 </div>
                 <button 
-                    onClick={() => onFlowClick(flow.tab)} 
-                    className="mt-6 w-full bg-slate-900 p-3 rounded-lg shadow-sm border border-slate-700 text-left hover:shadow-md hover:border-fuchsia-500 transition-all duration-200 group flex items-center justify-between transform hover:scale-[1.02]"
+                    onClick={() => isActionable && onFlowClick(flow.tab)} 
+                    disabled={!isActionable}
+                    className={`mt-6 w-full bg-slate-900 p-3 rounded-lg shadow-sm border border-slate-700 text-left transition-all duration-200 group flex items-center justify-between ${isActionable ? 'hover:shadow-md hover:border-fuchsia-500 transform hover:scale-[1.02]' : 'cursor-not-allowed opacity-60'}`}
                 >
                     <div>
-                        <span className="text-base font-bold text-fuchsia-400">{flow.name}</span>
+                        <span className={`text-base font-bold ${isActionable ? 'text-fuchsia-400' : 'text-slate-500'}`}>{flow.name}</span>
                         <p className="text-xs text-slate-500">{flow.details}</p>
                     </div>
-                    <span className="text-sm font-bold text-fuchsia-400 transform transition-transform group-hover:translate-x-1">&rarr;</span>
+                     {isActionable ? (
+                        <span className="text-sm font-bold text-fuchsia-400 transform transition-transform group-hover:translate-x-1">&rarr;</span>
+                    ) : (
+                        <span className="text-[10px] font-bold text-slate-600 bg-slate-700/50 px-1.5 py-0.5 rounded-sm">예정</span>
+                    )}
                 </button>
             </div>
         </div>
