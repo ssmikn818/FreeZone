@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LogoIcon } from './Icons';
 // Fix: Replaced Page enum with the consolidated Tab enum for consistent props.
@@ -25,10 +24,16 @@ const Footer: React.FC<FooterProps> = ({ onGoToHome, onGoToContract }) => {
               혼자 일해도, 혼자 감당하진 않게.
             </p>
           </div>
-          <div className="bg-slate-800/50 p-4 rounded-lg space-y-3 text-xs text-slate-400 max-w-sm">
-             <p><strong className="text-slate-300">핵심 가치:</strong> FreeZone은 복잡한 계약 과정을 단순화하여 프리랜서가 자신의 권리를 쉽게 보호할 수 있도록 돕습니다.</p>
-             <p><strong className="text-slate-300">정보제공 원칙:</strong> FreeZone은 특정 상품을 판매하지 않습니다. 객관적인 정보를 제공하여 프리랜서의 합리적인 의사결정을 돕습니다.</p>
-           </div>
+          <div className="grid sm:grid-cols-2 gap-6 text-xs text-slate-400 max-w-2xl">
+            <div className="bg-slate-800/50 p-4 rounded-lg">
+                <p><strong className="text-slate-300">핵심 가치</strong></p>
+                <p className="mt-2">FreeZone은 복잡한 계약 과정을 단순화하여 프리랜서가 자신의 권리를 쉽게 보호할 수 있도록 돕습니다.</p>
+            </div>
+            <div className="bg-slate-800/50 p-4 rounded-lg">
+                <p><strong className="text-slate-300">정보제공 원칙</strong></p>
+                <p className="mt-2">FreeZone은 특정 상품을 판매하지 않습니다. 객관적인 정보를 제공하여 프리랜서의 합리적인 의사결정을 돕습니다.</p>
+            </div>
+          </div>
         </div>
         <div className="mt-8 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
           <p>&copy; {new Date().getFullYear()} FreeZone Corp. All rights reserved.</p>
