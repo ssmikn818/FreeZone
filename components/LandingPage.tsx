@@ -962,6 +962,7 @@ const getClauseGuidance = (projectValue: number) => {
 
 const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }) => {
     const [step, setStep] = useState(1);
+    const [infoStep, setInfoStep] = useState(0);
     const [clauseStep, setClauseStep] = useState(0);
     const [formData, setFormData] = useState({
         clientName: '',
@@ -992,6 +993,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
     const clauseGuidance = useMemo(() => getClauseGuidance(formData.projectValue), [formData.projectValue]);
     const guidanceForTask = useMemo(() => clauseGuidance[formData.task as keyof typeof clauseGuidance] || {}, [clauseGuidance, formData.task]);
     
+    const infoFields = useMemo(() => [
+        { key: 'definition', title: '프로젝트 정의', description: '가장 중요한 프로젝트 종류를 먼저 선택해주세요.' },
+        { key: 'parties', title: '계약 당사자 및 산출물', description: '누가 무엇을 전달해야 하는지 명확히 해요.' },
+        { key: 'schedule', title: '일정 및 대금', description: '언제까지, 얼마에 진행하는지 명확히 정의해요.' },
+    ], []);
+
     const clauseFields = useMemo(() => [
         { key: 'scope', title: '작업의 범위와 내용', icon: <ScopeIcon /> },
         { key: 'revisions', title: '수정 횟수 및 범위', icon: <RevisionsIcon /> },
@@ -1001,8 +1008,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
         { key: 'feedback', title: '피드백 및 소통 방식', icon: <FeedbackIcon /> },
         { key: 'review', title: '기타 특약사항 (비밀유지 등)', icon: <PencilSquareIcon /> }
     ], []);
-
-    const showFullForm = formData.task !== '';
 
     useEffect(() => {
         if (step === 2 && clauseTitleRef.current) {
@@ -1019,6 +1024,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
         }
         setStep(newStep);
         onGoToContract();
+    };
+
+    const handleNextInfoStep = () => {
+        if (infoStep < infoFields.length - 1) {
+            setInfoStep(prev => prev + 1);
+            onGoToContract();
+        } else {
+            handleStepChange(2);
+        }
+    };
+
+    const handlePrevInfoStep = () => {
+        if (infoStep > 0) {
+            setInfoStep(prev => prev - 1);
+            onGoToContract();
+        }
     };
 
     const handleBackToClauses = () => {
@@ -1039,6 +1060,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
         if (clauseStep > 0) {
             setClauseStep(clauseStep - 1);
         } else {
+            setInfoStep(infoFields.length - 1);
             handleStepChange(1);
         }
     };
@@ -1272,133 +1294,148 @@ ${formattedDate}
             </div>
 
             {/* Step 1: Basic Info */}
-            {step === 1 && (
-                <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl space-y-8 animate-fade-in max-w-5xl mx-auto">
-                    <div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-1">어떤 프로젝트 계약인가요?</h2>
-                        <p className="text-slate-600">가장 중요한 프로젝트 종류를 먼저 선택해주세요.</p>
-                    </div>
-                     <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                            <label htmlFor="industry" className="font-semibold text-slate-700">분야</label>
-                            <select id="industry" name="industry" value={formData.industry} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                                <option value="" disabled>분야를 선택하세요</option>
-                                {INDUSTRY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
+            {step === 1 && (() => {
+                const currentInfoField = infoFields[infoStep];
+                return (
+                    <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl space-y-8 animate-fade-in max-w-5xl mx-auto">
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-900 mb-1">기본 정보 입력 ({infoStep + 1}/{infoFields.length})</h2>
+                            <p className="text-slate-600">{currentInfoField.description}</p>
                         </div>
-                         <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                            <label htmlFor="task" className="font-semibold text-slate-700">주요 과업</label>
-                            <select id="task" name="task" value={formData.task} onChange={handleFormChange} disabled={!formData.industry} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50">
-                                <option value="" disabled>주요 과업을 선택하세요</option>
-                                {TASK_OPTIONS[formData.industry]?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
-                        </div>
-                    </div>
 
-                    {showFullForm && (
-                        <div className="space-y-8 animate-fade-in pt-8 border-t border-slate-200">
-                            <div>
-                                <h2 className="text-2xl font-bold text-slate-900 mb-1">프로젝트 기본 정보</h2>
-                                <p className="text-slate-600">누가, 무엇을, 언제까지, 얼마에 진행하는지 명확히 정의해요.</p>
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-6">
+                        {infoStep === 0 && (
+                            <div className="space-y-8 animate-fade-in pt-4">
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
+                                        <label htmlFor="industry" className="font-semibold text-slate-700">분야</label>
+                                        <select id="industry" name="industry" value={formData.industry} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                            <option value="" disabled>분야를 선택하세요</option>
+                                            {INDUSTRY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
+                                        <label htmlFor="task" className="font-semibold text-slate-700">주요 과업</label>
+                                        <select id="task" name="task" value={formData.task} onChange={handleFormChange} disabled={!formData.industry} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50">
+                                            <option value="" disabled>주요 과업을 선택하세요</option>
+                                            {TASK_OPTIONS[formData.industry]?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
                                 <div>
                                     <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                        <label htmlFor="clientName" className="font-semibold text-slate-700">의뢰인 (갑)</label>
-                                        <input type="text" id="clientName" name="clientName" value={formData.clientName} onChange={handleFormChange} placeholder="클라이언트 이름 또는 회사명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                        <label htmlFor="projectName" className="font-semibold text-slate-700">프로젝트명</label>
+                                        <input type="text" id="projectName" name="projectName" value={formData.projectName} onChange={handleFormChange} placeholder="예: 2024년 브랜드 리뉴얼" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
                                     </div>
                                     <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
                                         <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
-                                        <span>누구와 계약하는지 명확히 해야 나중에 분쟁 시 책임을 물을 수 있어요.</span>
-                                    </p>
-                                </div>
-                                <div>
-                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                        <label htmlFor="freelancerName" className="font-semibold text-slate-700">작업자 (을)</label>
-                                        <input type="text" id="freelancerName" name="freelancerName" value={formData.freelancerName} onChange={handleFormChange} placeholder="본인 이름 또는 활동명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                    </div>
-                                    <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
-                                        <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
-                                        <span>계약의 주체를 본인으로 명시하는 항목이에요. 활동명도 괜찮아요.</span>
+                                        <span>여러 프로젝트를 동시에 진행할 때 계약서를 구분하고 관리하기 편해요.</span>
                                     </p>
                                 </div>
                             </div>
-                            <div>
-                                <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                    <label htmlFor="projectName" className="font-semibold text-slate-700">프로젝트명</label>
-                                    <input type="text" id="projectName" name="projectName" value={formData.projectName} onChange={handleFormChange} placeholder="예: 2024년 브랜드 리뉴얼" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                </div>
-                                <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
-                                    <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
-                                    <span>여러 프로젝트를 동시에 진행할 때 계약서를 구분하고 관리하기 편해요.</span>
-                                </p>
-                            </div>
-                            <div>
-                                <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-4">
-                                    <label className="font-semibold text-slate-700">최종 산출물</label>
-                                    {formData.deliverables.map((item, index) => (
-                                        <div key={index} className="flex items-center gap-2">
-                                            <input type="text" value={item} onChange={(e) => handleDeliverableChange(index, e.target.value)} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                            <button type="button" onClick={() => removeDeliverable(index)} className="p-2 text-slate-500 hover:text-rose-500"><XMarkIcon className="h-5 w-5"/></button>
+                        )}
+                        
+                        {infoStep === 1 && (
+                            <div className="space-y-8 animate-fade-in pt-4">
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
+                                            <label htmlFor="clientName" className="font-semibold text-slate-700">의뢰인 (갑)</label>
+                                            <input type="text" id="clientName" name="clientName" value={formData.clientName} onChange={handleFormChange} placeholder="클라이언트 이름 또는 회사명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
                                         </div>
-                                    ))}
-                                    <button type="button" onClick={addDeliverable} className="text-sm font-semibold text-primary-600 hover:text-primary-500 flex items-center space-x-1 pt-2"><PlusIcon className="h-4 w-4"/><span>산출물 추가</span></button>
-                                </div>
-                                <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
-                                    <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
-                                    <span>"알아서 잘"은 분쟁의 씨앗! 결과물을 구체적으로 적을수록 좋아요.</span>
-                                </p>
-                            </div>
-                            <div>
-                                <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                    <label htmlFor="projectValue" className="font-semibold text-slate-700">총 계약 금액 (VAT 별도)</label>
-                                    <div className="relative">
-                                        <input type="text" id="projectValue" name="projectValue" value={formData.projectValue.toLocaleString('ko-KR')} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 pl-8 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₩</span>
+                                        <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
+                                            <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
+                                            <span>누구와 계약하는지 명확히 해야 나중에 분쟁 시 책임을 물을 수 있어요.</span>
+                                        </p>
                                     </div>
-                                    <p className="text-right text-sm text-slate-600">금 {numberToKoreanWon(formData.projectValue)} 원정</p>
-                                </div>
-                                <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
-                                    <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
-                                    <span>가장 중요한 부분! 정확한 금액을 적어야 나중에 떼일 위험이 없어요.</span>
-                                </p>
-                            </div>
-                            <div>
-                                <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                    <label htmlFor="contractDate" className="font-semibold text-slate-700">계약 체결일</label>
-                                    <input type="date" id="contractDate" name="contractDate" value={formData.contractDate} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                </div>
-                                <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
-                                    <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
-                                    <span>계약이 효력을 발휘하는 날짜예요. 일반적으로 오늘 날짜로 설정해요.</span>
-                                </p>
-                            </div>
-                            <div>
-                                <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                    <label className="font-semibold text-slate-700">계약 기간</label>
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <input type="date" id="startDate" name="startDate" value={formData.startDate} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                        <input type="date" id="endDate" name="endDate" value={formData.endDate} onChange={handleFormChange} className={`w-full bg-white text-slate-900 border rounded-md p-3 transition-colors ${dateError ? 'border-rose-500 focus:ring-rose-500 focus:border-rose-500' : 'border-slate-300 focus:ring-primary-500 focus:border-primary-500'}`} />
+                                    <div>
+                                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
+                                            <label htmlFor="freelancerName" className="font-semibold text-slate-700">작업자 (을)</label>
+                                            <input type="text" id="freelancerName" name="freelancerName" value={formData.freelancerName} onChange={handleFormChange} placeholder="본인 이름 또는 활동명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                        </div>
+                                        <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
+                                            <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
+                                            <span>계약의 주체를 본인으로 명시하는 항목이에요. 활동명도 괜찮아요.</span>
+                                        </p>
                                     </div>
-                                    {dateError && <p className="text-sm text-rose-500 text-center pt-2">{dateError}</p>}
                                 </div>
-                                <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
-                                    <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
-                                    <span>업무 기간을 명확히 해야 끝없는 수정과 추가 요청의 늪에서 벗어날 수 있어요.</span>
-                                </p>
+                                <div>
+                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-4">
+                                        <label className="font-semibold text-slate-700">최종 산출물</label>
+                                        {formData.deliverables.map((item, index) => (
+                                            <div key={index} className="flex items-center gap-2">
+                                                <input type="text" value={item} onChange={(e) => handleDeliverableChange(index, e.target.value)} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                                <button type="button" onClick={() => removeDeliverable(index)} className="p-2 text-slate-500 hover:text-rose-500"><XMarkIcon className="h-5 w-5"/></button>
+                                            </div>
+                                        ))}
+                                        <button type="button" onClick={addDeliverable} className="text-sm font-semibold text-primary-600 hover:text-primary-500 flex items-center space-x-1 pt-2"><PlusIcon className="h-4 w-4"/><span>산출물 추가</span></button>
+                                    </div>
+                                    <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
+                                        <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
+                                        <span>"알아서 잘"은 분쟁의 씨앗! 결과물을 구체적으로 적을수록 좋아요.</span>
+                                    </p>
+                                </div>
                             </div>
-                            <div className="flex justify-end pt-4">
-                                <button 
-                                onClick={() => handleStepChange(2)} 
-                                disabled={!!dateError}
+                        )}
+                        
+                        {infoStep === 2 && (
+                            <div className="space-y-8 animate-fade-in pt-4">
+                                <div>
+                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
+                                        <label htmlFor="projectValue" className="font-semibold text-slate-700">총 계약 금액 (VAT 별도)</label>
+                                        <div className="relative">
+                                            <input type="text" id="projectValue" name="projectValue" value={formData.projectValue.toLocaleString('ko-KR')} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 pl-8 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₩</span>
+                                        </div>
+                                        <p className="text-right text-sm text-slate-600">금 {numberToKoreanWon(formData.projectValue)} 원정</p>
+                                    </div>
+                                    <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
+                                        <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
+                                        <span>가장 중요한 부분! 정확한 금액을 적어야 나중에 떼일 위험이 없어요.</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
+                                        <label htmlFor="contractDate" className="font-semibold text-slate-700">계약 체결일</label>
+                                        <input type="date" id="contractDate" name="contractDate" value={formData.contractDate} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                    </div>
+                                    <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
+                                        <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
+                                        <span>계약이 효력을 발휘하는 날짜예요. 일반적으로 오늘 날짜로 설정해요.</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
+                                        <label className="font-semibold text-slate-700">계약 기간</label>
+                                        <div className="grid md:grid-cols-2 gap-6">
+                                            <input type="date" id="startDate" name="startDate" value={formData.startDate} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                            <input type="date" id="endDate" name="endDate" value={formData.endDate} onChange={handleFormChange} className={`w-full bg-white text-slate-900 border rounded-md p-3 transition-colors ${dateError ? 'border-rose-500 focus:ring-rose-500 focus:border-rose-500' : 'border-slate-300 focus:ring-primary-500 focus:border-primary-500'}`} />
+                                        </div>
+                                        {dateError && <p className="text-sm text-rose-500 text-center pt-2">{dateError}</p>}
+                                    </div>
+                                    <p className="flex items-start gap-2 mt-2 text-xs text-cyan-700">
+                                        <LightBulbIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-cyan-600" />
+                                        <span>업무 기간을 명확히 해야 끝없는 수정과 추가 요청의 늪에서 벗어날 수 있어요.</span>
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex justify-between items-center pt-4">
+                            <button 
+                                onClick={handlePrevInfoStep}
+                                className={`inline-flex items-center justify-center px-6 py-3 border border-slate-300 text-base font-bold rounded-full text-slate-700 bg-white hover:bg-slate-100 transition-colors ${infoStep === 0 ? 'invisible' : 'visible'}`}>
+                                이전
+                            </button>
+                            <button 
+                                onClick={handleNextInfoStep}
+                                disabled={(infoStep === 0 && !formData.task) || (infoStep === infoFields.length - 1 && !!dateError)}
                                 className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-bold rounded-full text-white bg-primary-600 hover:bg-primary-500 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                    다음: 세부 조항 작성
-                                </button>
-                            </div>
+                                {infoStep === infoFields.length - 1 ? '다음: 세부 조항 작성' : '다음'}
+                            </button>
                         </div>
-                    )}
-                </div>
-            )}
+                    </div>
+                );
+            })()}
             
             {/* Step 2: Clauses */}
             {step === 2 && (() => {
