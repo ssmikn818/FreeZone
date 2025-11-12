@@ -19,7 +19,7 @@ const IndustryContent: React.FC = () => (
     <div className="max-w-4xl mx-auto">
         <div className="flex flex-wrap justify-center gap-4 px-4">
             {freelancerRoles.map((role) => (
-                <div key={role} className="bg-slate-800 px-6 py-3 rounded-full shadow-sm border border-slate-700 transition-transform hover:scale-105 cursor-default hover:border-fuchsia-500">
+                <div key={role} className="bg-slate-800 px-6 py-3 rounded-full shadow-sm border border-slate-700 transition-transform hover:scale-105 cursor-default hover:border-primary-500">
                     <p className="text-md font-medium text-slate-300">{role}</p>
                 </div>
             ))}
@@ -32,7 +32,7 @@ const IndustryContent: React.FC = () => (
 
 const solutionsData = {
   design_media: {
-    icon: <PaletteIcon className="h-12 w-12 text-rose-500" />,
+    icon: <PaletteIcon className="h-12 w-12 text-pink-500" />,
     title: '디자인 & 미디어',
     solutions: [
       {
@@ -53,7 +53,7 @@ const solutionsData = {
     ]
   },
   it_development: {
-    icon: <CodeIcon className="h-12 w-12 text-teal-500" />,
+    icon: <CodeIcon className="h-12 w-12 text-cyan-500" />,
     title: 'IT & 개발',
     solutions: [
        {
@@ -74,7 +74,7 @@ const solutionsData = {
     ]
   },
   marketing_consulting: {
-    icon: <BriefcaseIcon className="h-12 w-12 text-indigo-500" />,
+    icon: <BriefcaseIcon className="h-12 w-12 text-violet-500" />,
     title: '마케팅 & 컨설팅',
     solutions: [
        {
@@ -95,7 +95,7 @@ const solutionsData = {
     ]
   },
   platform_gigworker: {
-    icon: <ClipboardListIcon className="h-12 w-12 text-sky-500" />,
+    icon: <ClipboardListIcon className="h-12 w-12 text-emerald-500" />,
     title: '플랫폼 & 긱워커',
     solutions: [
        {
@@ -130,25 +130,25 @@ const SolutionCard: React.FC<{
                 <p className="font-semibold text-slate-400 text-sm mb-2">🤔 이런 문제, 겪고 계신가요?</p>
                 <p className="text-slate-100 font-bold text-lg">{problem}</p>
             </div>
-            <div className="bg-gradient-to-br from-fuchsia-600/10 to-pink-600/10 p-6 border-t border-fuchsia-500/30">
+            <div className="bg-gradient-to-br from-primary-600/10 to-cyan-600/10 p-6 border-t border-primary-500/30">
                 <div className="flex items-start space-x-3">
-                    <LightBulbIcon className="h-6 w-6 text-fuchsia-400 flex-shrink-0 mt-0.5" />
+                    <LightBulbIcon className="h-6 w-6 text-primary-400 flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="font-semibold text-fuchsia-400 text-sm mb-2">✨ 맞춤 해결책</p>
+                        <p className="font-semibold text-primary-400 text-sm mb-2">✨ 맞춤 해결책</p>
                         <p className="text-slate-300" dangerouslySetInnerHTML={{ __html: solution }} />
                     </div>
                 </div>
                 <button 
                     onClick={() => isActionable && onFlowClick(flow.tab)} 
                     disabled={!isActionable}
-                    className={`mt-6 w-full bg-slate-900 p-3 rounded-lg shadow-sm border border-slate-700 text-left transition-all duration-200 group flex items-center justify-between ${isActionable ? 'hover:shadow-md hover:border-fuchsia-500 transform hover:scale-[1.02]' : 'cursor-not-allowed opacity-60'}`}
+                    className={`mt-6 w-full bg-slate-900 p-3 rounded-lg shadow-sm border border-slate-700 text-left transition-all duration-200 group flex items-center justify-between ${isActionable ? 'hover:shadow-md hover:border-primary-500 transform hover:scale-[1.02]' : 'cursor-not-allowed opacity-60'}`}
                 >
                     <div>
-                        <span className={`text-base font-bold ${isActionable ? 'text-fuchsia-400' : 'text-slate-500'}`}>{flow.name}</span>
+                        <span className={`text-base font-bold ${isActionable ? 'text-primary-400' : 'text-slate-500'}`}>{flow.name}</span>
                         <p className="text-xs text-slate-500">{flow.details}</p>
                     </div>
                      {isActionable ? (
-                        <span className="text-sm font-bold text-fuchsia-400 transform transition-transform group-hover:translate-x-1">&rarr;</span>
+                        <span className="text-sm font-bold text-primary-400 transform transition-transform group-hover:translate-x-1">&rarr;</span>
                     ) : (
                         <span className="text-[10px] font-bold text-slate-600 bg-slate-700/50 px-1.5 py-0.5 rounded-sm">예정</span>
                     )}
@@ -175,8 +175,8 @@ const IndustryPage: React.FC<IndustryPageProps> = ({ isLandingSection = false, s
   };
 
   return (
-    <div className="bg-slate-900">
-      <div className="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
+    <div className="bg-slate-950">
+      <div className="max-w-7xl mx-auto py-20 px-6 sm:px-8 lg:px-12">
         <div className="text-center">
           <h1 className="text-4xl font-extrabold text-slate-100">당신의 분야에 최적화된, 업계별 활용 가이드</h1>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-400">
@@ -191,9 +191,9 @@ const IndustryPage: React.FC<IndustryPageProps> = ({ isLandingSection = false, s
                     <button
                         key={key}
                         onClick={() => setActiveSolution(key)}
-                        className={`w-full px-4 py-2 sm:px-6 sm:py-2.5 text-base sm:text-lg font-bold rounded-full transition-all duration-300 whitespace-nowrap ${
+                        className={`w-full px-4 py-2 sm:px-6 sm:py-2.5 text-sm sm:text-base font-bold rounded-full transition-all duration-300 whitespace-nowrap ${
                             activeSolution === key
-                            ? 'bg-slate-900 text-fuchsia-400 shadow-lg'
+                            ? 'bg-slate-900 text-primary-400 shadow-lg'
                             : 'bg-transparent text-slate-400 hover:text-slate-100'
                         }`}
                         >

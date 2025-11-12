@@ -13,12 +13,12 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ onGoToHome, onGoToContract }) => {
 
   return (
-    <footer className="bg-slate-900 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <footer className="bg-slate-950 border-t border-slate-800">
+      <div className="max-w-7xl mx-auto py-12 px-6 sm:px-8 lg:px-12">
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-8">
           <div className="space-y-4">
             <button onClick={onGoToHome} className="flex items-center space-x-2">
-              <LogoIcon className="h-8 w-8 text-fuchsia-500" />
+              <LogoIcon className="h-8 w-8 text-primary-500" />
               <span className="text-2xl font-bold text-slate-100">FreeZone</span>
             </button>
             <p className="text-slate-400 text-sm font-medium">

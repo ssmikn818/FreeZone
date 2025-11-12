@@ -17,7 +17,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-slate-900">
+    <div className="min-h-screen flex flex-col font-sans bg-slate-950">
       <Header onGoToHome={handleScrollToTop} onGoToContract={handleScrollToTop} />
       <main className="flex-grow">
         <LandingPage contractRef={contractRef} onGoToContract={handleScrollToTop} />
