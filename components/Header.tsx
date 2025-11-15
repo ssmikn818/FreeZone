@@ -5,19 +5,20 @@ import { NAV_TABS } from '../constants';
 import { LogoIcon } from './Icons';
 
 interface HeaderProps {
-  onGoToHome: () => void;
+  activeTab: Tab;
+  onSelectTab: (tab: Tab) => void;
   onGoToContract: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onGoToHome, onGoToContract }) => {
-  const navItems = NAV_TABS.filter(tab => tab !== Tab.Home);
+const Header: React.FC<HeaderProps> = ({ activeTab, onSelectTab, onGoToContract }) => {
+  const navItems = NAV_TABS;
 
   return (
     <header className="bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
-             <button onClick={onGoToHome} className="flex items-center space-x-2 text-primary-400">
+             <button onClick={() => onSelectTab(Tab.Home)} className="flex items-center space-x-2 text-primary-400">
               <LogoIcon className="h-8 w-8" />
               <span className="text-2xl font-bold text-slate-100">FreeZone</span>
             </button>
@@ -26,8 +27,8 @@ const Header: React.FC<HeaderProps> = ({ onGoToHome, onGoToContract }) => {
                 return (
                   <button
                     key={tab}
-                    onClick={onGoToHome}
-                    className={`flex items-center text-sm font-medium transition-colors text-slate-400 hover:text-slate-100`}
+                    onClick={() => onSelectTab(tab)}
+                    className={`flex items-center text-sm font-medium transition-colors ${activeTab === tab ? 'text-primary-400' : 'text-slate-400 hover:text-slate-100'}`}
                   >
                     {tab}
                   </button>

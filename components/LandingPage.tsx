@@ -1587,84 +1587,82 @@ ${formattedDate}
             )}
         </div>
       </section>
-
-      {/* How it works Section */}
-      <section className="py-20 sm:py-24">
-         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-slate-100 mb-4">계약서 작성, 이렇게 쉬워요</h2>
-              <p className="text-lg text-slate-400 max-w-3xl mx-auto">더 이상 만나서 도장 찍을 필요 없어요. FreeZone이면 계약서 작성의 모든 과정이 끝납니다.</p>
-            </div>
-            <div className="mt-20 relative">
-              <div className="grid md:grid-cols-3 gap-y-16 md:gap-x-16 text-center">
-                
-                <div className="relative">
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-800 border-2 border-primary-500/50 rounded-full h-16 w-16 flex items-center justify-center font-bold text-2xl text-primary-400">1</div>
-                  <div className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 h-full">
-                    <DocumentTextIcon className="h-12 w-12 text-primary-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-slate-100">계약서 생성</h3>
-                    <p className="mt-2 text-slate-400">분야별 전문가가 검토한 템플릿에 프로젝트 정보만 입력하면 계약서가 뚝딱 완성돼요.</p>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-800 border-2 border-primary-500/50 rounded-full h-16 w-16 flex items-center justify-center font-bold text-2xl text-primary-400">2</div>
-                  <div className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 h-full">
-                    <ShareIcon className="h-12 w-12 text-primary-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-slate-100">내용 전달</h3>
-                    <p className="mt-2 text-slate-400">완성된 계약서 내용을 복사해 이메일, 카톡 등 편한 방법으로 상대방에게 전달하고 조율하세요.</p>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-800 border-2 border-primary-500/50 rounded-full h-16 w-16 flex items-center justify-center font-bold text-2xl text-primary-400">3</div>
-                   <div className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 h-full">
-                    <SignatureIcon className="h-12 w-12 text-primary-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-slate-100">서명 및 보관</h3>
-                    <p className="mt-2 text-slate-400">최종 합의된 내용에 양측이 서명하면 계약 완료! 계약서는 각자 안전하게 보관하여 효력을 갖추세요.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-         </div>
-      </section>
       
-      {/* Features Section */}
-      <section className="py-20 sm:py-24 bg-slate-900/50">
+      {/* How it works */}
+      <section className="py-20 sm:py-24 bg-slate-900">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl font-extrabold text-slate-100 sm:text-4xl">당신의 시간을 아껴줄 강력한 기능</h2>
-            <p className="mt-4 text-lg text-slate-400">
-              FreeZone 계약은 단순한 문서 작성을 넘어, 프리랜서에게 꼭 필요한 안전장치를 제공합니다.
-            </p>
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl font-extrabold text-slate-100 sm:text-4xl">계약서 작성, 이렇게 쉬워요</h2>
+            <p className="mt-4 text-lg text-slate-400">단 3단계로 복잡한 계약 과정을 끝내보세요.</p>
           </div>
-          <div className="mt-16 max-w-7xl mx-auto grid md:grid-cols-2 gap-8">
-            <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 flex items-start space-x-4">
-              <DocumentDuplicateIcon className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1" />
+          <div className="mt-16 grid md:grid-cols-3 gap-12 text-center">
+            <div className="flex flex-col items-center">
+              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-500/10 border-2 border-primary-500/30 text-primary-400">
+                <DocumentTextIcon className="h-8 w-8" />
+              </div>
+              <h3 className="mt-6 text-xl font-bold text-slate-100">1. 정보 입력</h3>
+              <p className="mt-2 text-slate-400">프로젝트 기본 정보를 입력하고 AI 추천 조항으로 똑똑하게 계약서를 채워요.</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-500/10 border-2 border-primary-500/30 text-primary-400">
+                <ShareIcon className="h-8 w-8" />
+              </div>
+              <h3 className="mt-6 text-xl font-bold text-slate-100">2. 내용 공유</h3>
+              <p className="mt-2 text-slate-400">완성된 계약서를 링크로 공유하고 상대방의 확인을 받아요.</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-500/10 border-2 border-primary-500/30 text-primary-400">
+                <SignatureIcon className="h-8 w-8" />
+              </div>
+              <h3 className="mt-6 text-xl font-bold text-slate-100">3. 서명 완료</h3>
+              <p className="mt-2 text-slate-400">전자 서명으로 간편하게 계약을 체결하고 안전하게 보관해요.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-20 sm:py-24">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl font-extrabold text-slate-100 sm:text-4xl">당신의 시간을 아껴줄 강력한 기능</h2>
+            <p className="mt-4 text-lg text-slate-400">FreeZone은 단순한 계약서 생성을 넘어, 프리랜서를 위한 다양한 보호 장치를 제공합니다.</p>
+          </div>
+          <div className="mt-16 grid md:grid-cols-2 gap-8">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex space-x-6">
+              <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-lg bg-cyan-500/10 text-cyan-400">
+                <LightBulbIcon className="h-7 w-7" />
+              </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-100">분야별 표준 템플릿</h3>
-                <p className="mt-1 text-slate-400">IT/개발, 디자인, 마케팅 등 분야별 전문가가 검토한 계약서로, 놓치기 쉬운 필수 조항까지 꼼꼼하게 챙길 수 있습니다.</p>
+                <h3 className="text-xl font-bold text-slate-100">AI 추천 조항</h3>
+                <p className="mt-1 text-slate-400">어떤 조항을 넣을지 막막한가요? 프로젝트 유형에 맞는 필수 조항을 AI가 추천해 드립니다.</p>
               </div>
             </div>
-             <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 flex items-start space-x-4">
-              <ScaleIcon className="h-8 w-8 text-primary-400 flex-shrink-0 mt-1" />
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex space-x-6">
+              <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <ShieldCheckIcon className="h-7 w-7" />
+              </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-100">분쟁 방지 맞춤 조항</h3>
-                <p className="mt-1 text-slate-400">변호사가 검토한 표준 조항들을 바탕으로, 분쟁 발생 시 당신을 보호할 든든한 법적 근거를 마련합니다.</p>
+                <h3 className="text-xl font-bold text-slate-100">실시간 신뢰도 분석</h3>
+                <p className="mt-1 text-slate-400">혹시 불리한 조항은 없는지, AI가 계약서를 실시간으로 분석하여 분쟁 위험을 알려드립니다.</p>
               </div>
             </div>
-             <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 flex items-start space-x-4">
-              <LightBulbIcon className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1" />
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex space-x-6">
+              <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-lg bg-violet-500/10 text-violet-400">
+                <DocumentDuplicateIcon className="h-7 w-7" />
+              </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-100">AI 기반 맞춤 조항 추천</h3>
-                <p className="mt-1 text-slate-400">어떤 조항을 넣어야 할지 막막한가요? 프로젝트 종류와 금액에 맞춰 AI가 제안하는 맞춤 조항을 바로 적용해 보세요.</p>
+                <h3 className="text-xl font-bold text-slate-100">다양한 업계 템플릿</h3>
+                <p className="mt-1 text-slate-400">디자인, 개발부터 컨설팅까지. 변호사가 검토한 다양한 업계 표준 템플릿을 제공합니다.</p>
               </div>
             </div>
-             <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 flex items-start space-x-4">
-              <ShieldCheckIcon className="h-8 w-8 text-primary-400 flex-shrink-0 mt-1" />
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex space-x-6">
+              <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-lg bg-pink-500/10 text-pink-400">
+                <ScaleIcon className="h-7 w-7" />
+              </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-100">안전한 계약서 생성</h3>
-                <p className="mt-1 text-slate-400">입력한 정보는 어디에도 저장되지 않습니다. 안심하고 당신에게 꼭 맞는 계약서를 만들어보세요.</p>
+                <h3 className="text-xl font-bold text-slate-100">법적 안정성 확보</h3>
+                <p className="mt-1 text-slate-400">표준화된 계약서 양식으로 구두 계약이나 불분명한 합의로 인한 법적 분쟁을 원천 차단합니다.</p>
               </div>
             </div>
           </div>

@@ -6,5 +6,4 @@ export enum Tab {
   Deposit = '안전 예치',
   Settlement = '정산',
   Guarantee = '보장',
-  Curation = '성장 가이드',
 }
