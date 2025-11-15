@@ -1093,16 +1093,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
     }, [formData.task, clauseGuidance]);
 
     useEffect(() => {
-        if (formData.startDate && formData.endDate) {
+        if (formData.startDate && formData.endDate && formData.contractDate) {
             const start = new Date(formData.startDate);
             const end = new Date(formData.endDate);
+            const contract = new Date(formData.contractDate);
             if (end < start) {
                 setDateError('종료일은 시작일보다 빠를 수 없습니다.');
+            } else if (start < contract) {
+                setDateError('시작일은 계약 체결일보다 빠를 수 없습니다.');
             } else {
                 setDateError('');
             }
         }
-    }, [formData.startDate, formData.endDate]);
+    }, [formData.startDate, formData.endDate, formData.contractDate]);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -1484,7 +1487,7 @@ ${formattedDate}
                                         <div className="mt-4">
                                             <h3 className="text-sm font-semibold text-cyan-700 mb-2 flex items-center space-x-1.5">
                                                 <LightBulbIcon className="h-4 w-4" />
-                                                <span>전문가 추천 조항</span>
+                                                <span>유형별 추천 조항</span>
                                             </h3>
                                             <p className="text-xs text-slate-500 mb-4">
                                                 아래 추천 조항 중 프로젝트에 가장 적합한 것을 선택하세요.
@@ -1653,8 +1656,8 @@ ${formattedDate}
              <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 flex items-start space-x-4">
               <LightBulbIcon className="h-8 w-8 text-cyan-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-lg font-bold text-slate-100">AI 기반 전문가 조항 추천</h3>
-                <p className="mt-1 text-slate-400">어떤 조항을 넣어야 할지 막막한가요? 프로젝트 종류와 금액에 맞춰 전문가가 추천하는 맞춤 조항을 바로 적용해 보세요.</p>
+                <h3 className="text-lg font-bold text-slate-100">AI 기반 맞춤 조항 추천</h3>
+                <p className="mt-1 text-slate-400">어떤 조항을 넣어야 할지 막막한가요? 프로젝트 종류와 금액에 맞춰 AI가 제안하는 맞춤 조항을 바로 적용해 보세요.</p>
               </div>
             </div>
              <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 flex items-start space-x-4">
