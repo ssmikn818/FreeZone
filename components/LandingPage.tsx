@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, RefObject, useRef } from 'react';
 import { Tab } from '../types';
-import { DocumentTextIcon, ShareIcon, SignatureIcon, ShieldCheckIcon, DocumentDuplicateIcon, ScaleIcon, PlusIcon, LightBulbIcon, CheckCircleIcon, ScopeIcon, RevisionsIcon, DollarIcon, IPRightsIcon, TerminationIcon, FeedbackIcon, ClipboardIcon, PrinterIcon, XMarkIcon, QuestionMarkCircleIcon, PencilSquareIcon, ArrowLeftIcon, PaletteIcon, CodeIcon, BriefcaseIcon, ClockIcon, BellIcon, CheckBadgeIcon, AnalysisValidIcon, AnalysisInvalidIcon } from './Icons';
+import { DocumentTextIcon, ShareIcon, SignatureIcon, ShieldCheckIcon, DocumentDuplicateIcon, ScaleIcon, PlusIcon, LightBulbIcon, CheckCircleIcon, ScopeIcon, RevisionsIcon, DollarIcon, IPRightsIcon, TerminationIcon, FeedbackIcon, ClipboardIcon, PrinterIcon, XMarkIcon, QuestionMarkCircleIcon, PencilSquareIcon, ArrowLeftIcon, PaletteIcon, CodeIcon, BriefcaseIcon, ClockIcon, BellIcon, CheckBadgeIcon, AnalysisValidIcon, AnalysisInvalidIcon, ArrowDownTrayIcon, ChatBubbleOvalLeftEllipsisIcon } from './Icons';
 
 interface LandingPageProps {
   contractRef: RefObject<HTMLDivElement>;
@@ -125,6 +125,14 @@ const numberToKoreanWon = (num: number): string => {
     }
 
     return result.trim() || '영';
+};
+
+const getFormattedDate = (dateStr: string) => {
+    const contractSigningDate = dateStr ? new Date(dateStr + 'T00:00:00') : new Date();
+    const year = contractSigningDate.getFullYear();
+    const month = contractSigningDate.getMonth() + 1;
+    const day = contractSigningDate.getDate();
+    return `${year}년 ${month}월 ${day}일`;
 };
 
 const getClauseGuidance = (projectValue: number) => {
@@ -987,7 +995,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
     });
     const [activeClauseHelp, setActiveClauseHelp] = useState<string | null>(null);
     const [dateError, setDateError] = useState('');
-    const [notificationClicked, setNotificationClicked] = useState(false);
     const clauseTitleRef = useRef<HTMLDivElement>(null);
 
     const clauseGuidance = useMemo(() => getClauseGuidance(formData.projectValue), [formData.projectValue]);
@@ -1141,11 +1148,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
     };
     
     const generateContractText = useCallback(() => {
-        const contractSigningDate = formData.contractDate ? new Date(formData.contractDate + 'T00:00:00') : new Date();
-        const year = contractSigningDate.getFullYear();
-        const month = contractSigningDate.getMonth() + 1;
-        const day = contractSigningDate.getDate();
-        const formattedDate = `${year}년 ${month}월 ${day}일`;
+        const formattedDate = getFormattedDate(formData.contractDate);
 
         return `
 용역 계약서
@@ -1205,6 +1208,40 @@ ${formattedDate}
             alert('복사에 실패했습니다. 브라우저 설정을 확인해주세요.');
         });
     }, [generateContractText]);
+
+    const handleDownloadPdf = () => {
+        const element = document.getElementById('pdf-template');
+        if (!element) return;
+    
+        const opt = {
+            margin: 15,
+            filename: 'Freezone_표준계약서.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+    
+        // @ts-ignore
+        if (window.html2pdf) {
+            // @ts-ignore
+            window.html2pdf().set(opt).from(element).save();
+        } else {
+            alert("PDF 생성 라이브러리를 로드하는 중입니다. 잠시 후 다시 시도해주세요.");
+        }
+    };
+
+    const handleCopyKakao = () => {
+        const message = `안녕하세요, 요청하신 계약서 초안 송부드립니다.
+파일 확인 부탁드립니다.
+
+(본 계약서는 '1분 간편 전자계약 서비스 Freezone'을 통해 작성되었습니다)
+🌐 무료로 작성하기: https://freezone-1061689217082.us-west1.run.app/`;
+    
+        navigator.clipboard.writeText(message).then(() => {
+            alert("전송 멘트가 복사되었습니다! 카톡 채팅창에 붙여넣으세요.");
+        });
+    };
 
     const AnalysisItem: React.FC<{ title: string; description: string; isValid: boolean }> = ({ title, description, isValid }) => (
         <div className="flex items-start space-x-3">
@@ -1550,38 +1587,32 @@ ${formattedDate}
                     
                     <div className="mt-8 grid lg:grid-cols-3 gap-8 items-start">
                         <div className="lg:col-span-2 relative">
-                            <div className={`p-8 bg-slate-50 border border-slate-200 rounded-lg max-h-[70vh] overflow-y-auto transition-all duration-300 ${!notificationClicked ? 'blur-sm select-none' : ''}`}>
-                                <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800 leading-relaxed">
+                            <div className="p-8 bg-slate-50 border border-slate-200 rounded-lg max-h-[70vh] overflow-y-auto transition-all duration-300">
+                                <pre id="contract-content" className="whitespace-pre-wrap font-sans text-sm text-slate-800 leading-relaxed">
                                     {generateContractText()}
                                 </pre>
                             </div>
-                            {!notificationClicked && (
-                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center text-center p-8 space-y-8">
-                                    <p className="text-lg font-semibold text-slate-700">👇 아래 버튼을 눌러 계약서를 잠금 해제하세요.</p>
-                                    <button onClick={() => setNotificationClicked(true)} className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-full text-white bg-primary-600 hover:bg-primary-500 transition-all transform hover:scale-105">
-                                        <BellIcon className="h-6 w-6 mr-3"/>
-                                        출시 알림 받고 계약서 잠금 해제
-                                    </button>
-                                </div>
-                            )}
                         </div>
                         <div className="lg:col-span-1">
                             <ContractAnalysis />
                         </div>
                     </div>
                     <div className="mt-8 flex flex-wrap gap-4 justify-center min-h-[40px]">
-                        {notificationClicked && (
-                            <button onClick={handleCopy} className="flex items-center justify-center px-5 py-2 border border-slate-300 text-sm font-bold rounded-full text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors animate-fade-in">본문 복사</button>
-                        )}
+                        <button onClick={handleCopy} className="flex items-center justify-center px-5 py-3 border border-slate-300 text-sm font-bold rounded-full text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
+                            <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
+                            본문 복사
+                        </button>
+                        <button onClick={handleDownloadPdf} className="flex items-center justify-center px-5 py-3 border border-transparent text-sm font-bold rounded-full text-white bg-[#007bff] hover:bg-blue-700 transition-colors shadow-md">
+                            <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                            PDF로 저장하기
+                        </button>
+                        <button onClick={handleCopyKakao} className="flex items-center justify-center px-5 py-3 border border-transparent text-sm font-bold rounded-full text-[#3C1E1E] bg-[#FEE500] hover:bg-[#E6D000] transition-colors shadow-md">
+                            <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5 mr-2" />
+                            카톡 전송 멘트 복사
+                        </button>
                     </div>
                     <div className="mt-12 flex justify-between">
                          <button onClick={handleBackToClauses} className="inline-flex items-center justify-center px-6 py-3 border border-slate-300 text-base font-bold rounded-full text-slate-700 bg-white hover:bg-slate-100 transition-colors">이전</button>
-                         {notificationClicked && (
-                            <button disabled className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-bold rounded-full text-white bg-emerald-600 cursor-not-allowed">
-                                <CheckCircleIcon className="h-5 w-5 mr-2"/>
-                                알림 신청 완료!
-                            </button>
-                         )}
                     </div>
                 </div>
             )}
@@ -1687,6 +1718,126 @@ ${formattedDate}
             </div>
         </div>
       </section>
+
+      {/* Hidden PDF Template */}
+      <div id="pdf-template" className="absolute top-0 left-0 invisible pointer-events-none" style={{ width: '210mm', fontFamily: 'Batang, serif' }}>
+        <div className="bg-white text-black p-12 text-base leading-relaxed">
+            <h1 className="text-3xl font-bold text-center mb-12 border-b-2 border-black pb-4">용역 계약서</h1>
+            
+            <p className="mb-8">본 계약은 아래의 당사자 간에 체결된다.</p>
+            
+            <div className="mb-8 p-4 border border-gray-300 bg-gray-50 rounded">
+                 <div className="grid grid-cols-[100px_1fr] gap-2 mb-2">
+                    <span className="font-bold">의뢰인 (갑):</span>
+                    <span>{formData.clientName || '(의뢰인 성함)'}</span>
+                 </div>
+                 <div className="grid grid-cols-[100px_1fr] gap-2">
+                    <span className="font-bold">작업자 (을):</span>
+                    <span>{formData.freelancerName || '(작업자 성함)'}</span>
+                 </div>
+            </div>
+
+            <div className="space-y-6">
+                <section>
+                    <h2 className="text-xl font-bold mb-2">제 1 조 (계약의 목적)</h2>
+                    <p className="text-justify leading-7">
+                        "을"은 "갑"의 의뢰에 따라 <strong>‘{formData.projectName || '(프로젝트명)'}’</strong> 프로젝트(이하 "본 용역")를 수행하고, "갑"은 이에 대한 보수를 지급하는 것을 목적으로 한다.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 className="text-xl font-bold mb-2">제 2 조 (용역의 범위 및 내용)</h2>
+                    <p className="mb-2">"을"이 수행할 용역의 범위는 다음 각 호와 같다.</p>
+                    <ol className="list-decimal ml-5 space-y-2">
+                        <li><strong>주요 과업:</strong> {formData.task}</li>
+                        <li><strong>최종 산출물:</strong>
+                            <ul className="list-disc ml-5 mt-1 text-gray-700">
+                                {formData.deliverables.length > 0 ? formData.deliverables.map((d, i) => <li key={i}>{d}</li>) : <li>(산출물 없음)</li>}
+                            </ul>
+                        </li>
+                        <li><strong>기타:</strong> <div className="whitespace-pre-wrap mt-1">{clauses.scope || '(내용 없음)'}</div></li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h2 className="text-xl font-bold mb-2">제 3 조 (계약 기간)</h2>
+                    <p>본 용역의 수행 기간은 <strong>{formData.startDate}</strong>부터 <strong>{formData.endDate}</strong>까지로 한다.</p>
+                </section>
+
+                <section>
+                    <h2 className="text-xl font-bold mb-2">제 4 조 (계약 금액 및 지급 방법)</h2>
+                    <ol className="list-decimal ml-5 space-y-2">
+                        <li><strong>총 계약 금액:</strong> 일금 {numberToKoreanWon(formData.projectValue)} 원정 (₩{formData.projectValue.toLocaleString()}), 부가가치세 별도</li>
+                        <li><strong>지급 방법:</strong>
+                             <div className="whitespace-pre-wrap mt-1 p-2 bg-gray-50 rounded">{clauses.payment || CLAUSE_PLACEHOLDERS.payment}</div>
+                        </li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h2 className="text-xl font-bold mb-2">제 5 조 (수정 및 검수)</h2>
+                    <div className="whitespace-pre-wrap text-justify">{clauses.revisions || CLAUSE_PLACEHOLDERS.revisions}</div>
+                </section>
+
+                <section>
+                    <h2 className="text-xl font-bold mb-2">제 6 조 (저작권 귀속)</h2>
+                    <div className="whitespace-pre-wrap text-justify">{clauses.ip || CLAUSE_PLACEHOLDERS.ip}</div>
+                </section>
+                
+                 <section>
+                    <h2 className="text-xl font-bold mb-2">제 7 조 (피드백 및 소통)</h2>
+                    <div className="whitespace-pre-wrap text-justify">{clauses.feedback || CLAUSE_PLACEHOLDERS.feedback}</div>
+                </section>
+
+                 <section>
+                    <h2 className="text-xl font-bold mb-2">제 8 조 (계약의 해지)</h2>
+                    <div className="whitespace-pre-wrap text-justify">{clauses.termination || CLAUSE_PLACEHOLDERS.termination}</div>
+                </section>
+
+                 <section>
+                    <h2 className="text-xl font-bold mb-2">제 9 조 (비밀유지 의무 및 기타)</h2>
+                    <div className="whitespace-pre-wrap text-justify">{clauses.review || CLAUSE_PLACEHOLDERS.review}</div>
+                </section>
+            </div>
+
+            <div className="mt-20 pt-8 border-t border-black">
+                <p className="text-center mb-12 text-lg">{getFormattedDate(formData.contractDate)}</p>
+                
+                <div className="flex justify-between gap-12">
+                    <div className="flex-1 p-4">
+                        <h3 className="font-bold text-lg mb-4 border-b border-gray-400 pb-2">갑 (의뢰인)</h3>
+                        <div className="space-y-8">
+                            <div>
+                                <span className="text-sm text-gray-500">성함/상호</span>
+                                <p className="text-xl font-serif">{formData.clientName}</p>
+                            </div>
+                            <div className="flex items-end justify-between border-b border-black pb-1">
+                                <span className="text-sm text-gray-500">(서명 또는 인)</span>
+                                <span className="h-8"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex-1 p-4">
+                        <h3 className="font-bold text-lg mb-4 border-b border-gray-400 pb-2">을 (작업자)</h3>
+                        <div className="space-y-8">
+                            <div>
+                                <span className="text-sm text-gray-500">성함/상호</span>
+                                <p className="text-xl font-serif">{formData.freelancerName}</p>
+                            </div>
+                             <div className="flex items-end justify-between border-b border-black pb-1">
+                                <span className="text-sm text-gray-500">(서명 또는 인)</span>
+                                <span className="h-8"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+             <div className="mt-12 text-center text-xs text-gray-400">
+                본 계약서는 FreeZone (https://freezone-1061689217082.us-west1.run.app/) 서비스를 통해 작성되었습니다.
+            </div>
+        </div>
+      </div>
     </div>
   );
 };
