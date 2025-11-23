@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import LandingPage from './components/LandingPage';
+import { LandingPage } from './components/LandingPage';
 import { Tab } from './types';
 
 const App: React.FC = () => {

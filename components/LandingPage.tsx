@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback, RefObject, useRef } from 'react';
 import { Tab } from '../types';
 import { DocumentTextIcon, ShareIcon, SignatureIcon, ShieldCheckIcon, DocumentDuplicateIcon, ScaleIcon, PlusIcon, LightBulbIcon, CheckCircleIcon, ScopeIcon, RevisionsIcon, DollarIcon, IPRightsIcon, TerminationIcon, FeedbackIcon, ClipboardIcon, PrinterIcon, XMarkIcon, QuestionMarkCircleIcon, PencilSquareIcon, ArrowLeftIcon, PaletteIcon, CodeIcon, BriefcaseIcon, ClockIcon, BellIcon, CheckBadgeIcon, AnalysisValidIcon, AnalysisInvalidIcon, ArrowDownTrayIcon, ChatBubbleOvalLeftEllipsisIcon } from './Icons';
@@ -135,95 +134,161 @@ const getFormattedDate = (dateStr: string) => {
     return `${year}년 ${month}월 ${day}일`;
 };
 
-const getClauseGuidance = (projectValue: number) => {
-    
+// ----------------------
+// 조항 추천 로직 확장
+// ----------------------
+const getClauseGuidance = (projectValue: number, industry: string, task: string) => {
+    // 1. 공통 조항 (모든 업종 공통)
     const commonClauses = {
         termination: [
             {
                 title: '책임 분배형: 귀책사유 기준',
                 suggestion: '의뢰인의 단순 변심으로 계약 해지 시, 선금은 환불되지 않습니다.\n작업자의 귀책 사유로 계약 이행이 불가능할 경우, 선금 전액을 환불하고 총 계약금액의 20%를 손해배상금으로 지급합니다.',
-                rationale: `🤔 문제점: 일방적인 계약 파기는 양측 모두에게 금전적, 시간적 손해를 야기합니다.\n\n💡 해결책: 각 당사자의 귀책사유에 따른 책임 범위를 명확히 하여 부당한 계약 파기를 방지하고, 분쟁 발생 시 해결 기준을 제시합니다.`,
+                rationale: `🤔 문제점: 일방적인 계약 파기는 손해를 야기합니다.\n💡 해결책: 귀책사유에 따른 책임 범위를 명확히 하여 부당한 파기를 방지합니다.`,
             },
              {
                 title: '진행률 정산형: 단계별 비용 정산',
-                suggestion: '계약 해지 시점까지 진행된 작업량에 대해 상호 합의하여 정산합니다. (예: 기획 30%, 디자인 70% 등) 단, 의뢰인의 귀책사유로 인한 해지 시 총 계약금액의 10%가 위약금으로 추가 발생합니다.',
-                rationale: `🤔 문제점: 장기 프로젝트의 경우, 중도 해지 시 기여도 산정이 어렵습니다.\n\n💡 해결책: 사전에 단계별 작업 가치를 정해둠으로써, 중도 해지 시 정산 기준을 명확히 하여 분쟁을 최소화합니다.`
+                suggestion: '계약 해지 시점까지 진행된 작업량에 대해 상호 합의하여 정산합니다. (예: 착수 단계 30%, 중간 단계 70%) 단, 의뢰인 귀책 시 위약금 10%가 가산됩니다.',
+                rationale: `🤔 문제점: 중도 해지 시 기여도 산정이 어렵습니다.\n💡 해결책: 단계별 가치를 정해 정산 기준을 마련합니다.`
             },
         ],
         feedback: [
             {
                 title: '소통 규칙형: 피드백 채널/기한 지정',
                 suggestion: '각 단계별 결과물 공유 후 3 영업일 이내에 피드백을 제공합니다. 피드백은 지정된 채널(예: 이메일, 슬랙)로 일원화하여 전달하며, 구두 요청은 효력이 없습니다.',
-                rationale: `🤔 문제점: 피드백 지연과 분산된 소통은 프로젝트 지연의 주된 원인입니다.\n\n💡 해결책: 명확한 피드백 기한과 소통 채널 지정은 프로젝트 지연을 막고, 모든 커뮤니케이션 기록을 남겨 분쟁을 예방합니다.`
-            },
-             {
-                title: '정기 소통형: 주간 미팅 의무화',
-                suggestion: '주 1회(예: 매주 월요일 오전 10시) 정기적인 미팅을 통해 진행 상황을 공유하고 주요 의사결정을 합니다. 미팅 불참 시 서면으로 사유를 공유해야 하며, 2회 이상 무단 불참 시 계약 불이행으로 간주될 수 있습니다.',
-                rationale: `🤔 문제점: 중요한 논의가 제때 이루어지지 않아 프로젝트가 산으로 가는 경우가 많습니다.\n\n💡 해결책: 정기적인 소통 채널을 의무화하여 책임감을 높이고, 프로젝트 방향성을 일관되게 유지합니다.`
+                rationale: `🤔 문제점: 피드백 지연과 소통 분산은 일정 지연의 주범입니다.\n💡 해결책: 기한과 채널을 고정하여 기록을 남기고 효율을 높입니다.`
             },
         ],
         review: [
             {
                 title: '기본 보안형: 비밀유지 의무',
                 suggestion: '양 당사자는 본 계약과 관련하여 알게 된 상대방의 영업상, 기술상 비밀을 제3자에게 누설해서는 안 되며, 이 의무는 계약 종료 후 3년간 유효합니다.',
-                rationale: `🤔 문제점: 프로젝트 과정에서 공유되는 민감 정보가 유출될 경우, 심각한 사업적 피해가 발생할 수 있습니다.\n\n💡 해결책: 상호 신뢰를 구축하고, 양측의 핵심 자산을 보호하기 위한 필수적인 법적 장치입니다.`,
-            },
-            {
-                title: '품질 보증형: 하자보수 기간 명시',
-                suggestion: '최종 산출물 검수 완료 후 1개월간, 계약 범위 내 기능의 오류 및 버그에 대한 하자보수를 무상으로 지원합니다. 단, 기획 변경 및 기능 추가는 별도 계약으로 진행합니다.',
-                rationale: `🤔 문제점: 프로젝트 완료 후 발생하는 사소한 오류에 대한 책임 소재가 불분명하여 분쟁이 발생할 수 있습니다.\n\n💡 해결책: 명확한 하자보수 기간과 범위를 설정하여 클라이언트 만족도를 높이고, 추가 작업에 대한 분쟁을 예방합니다.`
+                rationale: `🤔 문제점: 민감 정보 유출은 사업적 피해를 줍니다.\n💡 해결책: 상호 신뢰와 자산 보호를 위한 필수 장치입니다.`,
             },
         ]
     };
 
-    const payment55 = {
-        title: '기본 분할형: 5:5 선금/잔금',
-        suggestion: `총 계약금액: ${projectValue.toLocaleString()}원 (VAT 별도)\n- 선금(50%): 계약 체결 후 3일 이내 (${(projectValue * 0.5).toLocaleString()}원)\n- 잔금(50%): 최종 산출물 검수 완료 후 3일 이내 (${(projectValue * 0.5).toLocaleString()}원)`,
-        rationale: `🤔 문제점: 대금 지급 방식이 불명확하면 미수금 발생의 위험이 커집니다.\n\n💡 해결책: 선금으로 초기 리소스를 확보하고, 잔금으로 최종 결과물에 대한 권리를 보장받는 가장 표준적인 방식입니다.`,
-    };
-    
-    const payment343 = {
-        title: '단계별 분할형: 30/40/30 분할',
-        suggestion: `총 계약금액: ${projectValue.toLocaleString()}원 (VAT 별도)\n- 계약금(30%): 계약 체결 시 (${(projectValue * 0.3).toLocaleString()}원)\n- 중도금(40%): 중간 산출물(예: 시안, 1차 개발본) 검수 완료 시 (${(projectValue * 0.4).toLocaleString()}원)\n- 잔금(30%): 최종 산출물 검수 완료 시 (${(projectValue * 0.3).toLocaleString()}원)`,
-        rationale: `🤔 문제점: 장기 프로젝트에서 대금 지급이 마지막에 몰려있으면, 작업자의 현금 흐름이 불안정해집니다.\n\n💡 해결책: 프로젝트 단계를 나누어 대금을 지급함으로써 현금 흐름을 안정시키고, 각 단계별 완료에 대한 상호 동의를 이끌어냅니다.`,
-    };
-    
-    const monthlyPayment = {
-        title: '월 정산형: 월 단위 후불 정산',
-        suggestion: `매월 말일에 해당 월의 용역 수행 내역을 기준으로 ${projectValue.toLocaleString()}원을 정산하여, 익월 5일까지 지급합니다. (세금계산서 발행 후)`,
-        rationale: `🤔 문제점: 장기적인 운영/관리 계약에서 대금 지급일이 불규칙하면 예측 가능한 수입 관리가 어렵습니다.\n\n💡 해결책: 매월 정해진 날짜에 대금을 지급받아 안정적인 현금 흐름을 확보하고, 장기적인 파트너십을 유지합니다.`,
+    // 2. 대금 지급 방식 (금액대별 추천)
+    const paymentClauses = {
+        standard: {
+            title: '기본 분할형: 5:5 선금/잔금',
+            suggestion: `총 계약금액: ${projectValue.toLocaleString()}원 (VAT 별도)\n- 선금(50%): 계약 체결 후 3일 이내 (${(projectValue * 0.5).toLocaleString()}원)\n- 잔금(50%): 최종 산출물 검수 완료 후 3일 이내 (${(projectValue * 0.5).toLocaleString()}원)`,
+            rationale: `가장 표준적인 방식으로, 초기 착수금과 최종 완료금을 균형 있게 배분합니다.`,
+        },
+        split343: {
+            title: '안전 분할형: 30/40/30 분할',
+            suggestion: `총 계약금액: ${projectValue.toLocaleString()}원 (VAT 별도)\n- 착수금(30%): 계약 체결 시\n- 중도금(40%): 중간 산출물 확인 시\n- 잔금(30%): 최종 완료 시`,
+            rationale: `프로젝트 기간이 길거나 금액이 클 때, 현금 흐름을 안정화하는 방식입니다.`,
+        }
     };
 
-    const ipPortfolio = {
-        title: '권리 양도형: 포트폴리오 사용 허용',
-        suggestion: '최종 선택된 결과물에 대한 저작재산권은 잔금 지급 완료 시 의뢰인에게 귀속됩니다. 단, 작업자는 해당 결과물을 자신의 포트폴리오로 사용할 수 있습니다.',
-        rationale: `🤔 문제점: 작업물의 소유권이 불분명하면, 2차 가공이나 상업적 이용 시 분쟁이 발생할 수 있습니다.\n\n💡 해결책: 잔금 지급과 저작권 이전을 명시하고, 프리랜서의 포트폴리오 사용 권한을 보장하여 양측의 권리를 보호합니다.`,
-    };
-    
-    const ipPortfolioFee = {
-        title: '권리 양도형: 포트폴리오 비공개 (추가비용)',
-        suggestion: '의뢰인의 요청으로 포트폴리오 사용이 불가능할 경우, 총 계약 금액의 20%에 해당하는 추가 비용이 발생합니다. 이는 작업자의 경력 증빙 및 홍보 기회비용을 보전하기 위함입니다.',
-        rationale: `🤔 문제점: 프리랜서에게 포트폴리오는 핵심적인 영업 자산이므로, 비공개 요청은 작업자에게 기회비용을 발생시킵니다.\n\n💡 해결책: 포트폴리오의 가치를 금전적으로 명시하여, 클라이언트의 비밀유지 요구를 수용하면서 작업자의 기회비용을 보상하는 합리적인 방식입니다.`,
-    };
-    
-     const ipClientOwned = {
-        title: '전체 양도형: 모든 산출물 권리 이전',
-        suggestion: '잔금 지급 완료 시, 본 계약을 통해 제작된 모든 산출물(소스코드, 문서, 디자인 등)에 대한 저작재산권 일체는 의뢰인에게 귀속됩니다.',
-        rationale: `🤔 문제점: 프로젝트 결과물의 소유권이 불명확하면, 향후 유지보수나 사업 확장에 어려움이 생길 수 있습니다.\n\n💡 해결책: 결과물에 대한 모든 권리를 명확히 이전하여, 클라이언트가 자산을 온전히 소유하고 자유롭게 활용할 수 있도록 보장합니다.`
-    };
+    // 3. 업종별 특화 로직 (Revisions, IP 등)
+    let industrySpecific = {};
 
+    switch (industry) {
+        case '디자인':
+            industrySpecific = {
+                revisions: [
+                     { title: '횟수 지정형: 총 2회', suggestion: '최초 시안 확인 후 1회, 최종 시안 확정 후 1회로 총 2회의 수정을 무료로 제공합니다. 이를 초과하는 수정이나 컨셉 변경은 별도 비용이 발생합니다.', rationale: '디자인 작업의 특성상 무제한 수정은 불가능하므로 명확한 횟수 제한이 필요합니다.' },
+                     { title: '단계별 제한형', suggestion: '스케치 단계 2회, 채색 단계 1회 수정 가능하며, 이전 단계로 돌아가는 수정(회귀 수정)은 불가능합니다.', rationale: '공정이 진행된 후 앞단계를 수정하는 비효율을 막습니다.' }
+                ],
+                ip: [
+                    { title: '포트폴리오 사용형', suggestion: '최종 결과물의 저작권은 의뢰인에게 귀속되나, 작업자는 이를 포트폴리오 용도로 사용할 수 있습니다.', rationale: '저작권은 넘기되, 작가의 경력 증빙 권리를 확보합니다.' },
+                    { title: '2차 저작권 별도', suggestion: '최종 결과물의 사용권은 의뢰인에게 있으나, 원본 파일의 수정 및 2차 저작물 작성권은 작업자에게 있습니다. (필요 시 별도 구매)', rationale: '원본 변형을 막고 추가 수익을 기대할 수 있습니다.' }
+                ]
+            };
+            break;
+        case 'IT/개발':
+            industrySpecific = {
+                 revisions: [
+                    { title: '하자보수 기간형', suggestion: '최종 산출물 인도 후 1개월간 발견된 버그 및 오류에 대해 무상 유지보수를 제공합니다. 단, 새로운 기능 추가나 기획 변경은 포함되지 않습니다.', rationale: '개발은 완료 후 버그 수정이 필수적이므로 기간을 정해 책임을 다합니다.' },
+                    { title: '범위 엄수형', suggestion: '기획서(요구사항 정의서)에 명시된 기능 외의 수정/추가 요청은 별도의 추가 계약(Change Request)을 통해 진행합니다.', rationale: '개발 범위 확장을(Scope Creep) 막기 위해 문서 기반 기준을 세웁니다.' }
+                ],
+                ip: [
+                    { title: '개발 산출물 양도', suggestion: '잔금 지급과 동시에 소스코드 및 산출물 일체의 권리는 의뢰인에게 귀속됩니다.', rationale: '일반적인 SI/외주 개발의 표준입니다.' },
+                    { title: '솔루션 라이선스', suggestion: '결과물의 사용권은 의뢰인에게 영구 부여되나, 사용된 핵심 모듈 및 라이브러리의 지적재산권은 작업자에게 유보됩니다.', rationale: '자체 솔루션을 활용해 개발하는 경우 핵심 기술을 보호합니다.' }
+                ]
+            };
+            break;
+        case '영상/미디어':
+             industrySpecific = {
+                revisions: [
+                    { title: '컷 편집/종편 구분형', suggestion: '가편집본(컷편집) 단계에서 1회, 종편(자막/효과) 단계에서 1회 수정을 진행합니다. 종편 단계에서 컷 편집 수정 시 추가 비용이 발생합니다.', rationale: '영상 작업은 렌더링 후 수정이 매우 번거로우므로 단계별 확정이 중요합니다.' },
+                    { title: '시간 기반 수정', suggestion: '전체 길이의 10% 이내 수정은 2회 무료이며, 전체 재편집이나 30% 이상의 수정은 신규 견적으로 처리합니다.', rationale: '수정 범위를 정량화하여 무리한 요구를 방지합니다.' }
+                ],
+                ip: [
+                    { title: '최종본 귀속형', suggestion: '최종 렌더링된 영상 파일의 저작권은 의뢰인에게 귀속됩니다. 프로젝트 원본(프로젝트 파일, 소스 등)은 제공되지 않습니다.', rationale: '일반적으로 원본 프로젝트 파일은 작업자의 노하우가 담겨있어 제공하지 않습니다.' },
+                    { title: '초상권/사용처 제한', suggestion: '제작된 영상은 합의된 매체(예: 유튜브)에서만 사용 가능하며, TV광고 등 타 매체 확장 시 별도 협의가 필요합니다.', rationale: '모델/성우의 초상권 및 사용료 이슈를 사전에 방지합니다.' }
+                ]
+            };
+            break;
+        case '글/콘텐츠':
+             industrySpecific = {
+                revisions: [
+                    { title: '윤문/교정 중심형', suggestion: '초안 전달 후 내용의 사실관계 오류 및 윤문 수정 2회를 제공합니다. 전체적인 방향성이나 톤앤매너 변경은 재작업 비용이 청구됩니다.', rationale: '글쓰기는 주관적 영역이므로, 내용 오류 수정과 전면 재작업을 구분해야 합니다.' },
+                    { title: '분량 기반형', suggestion: '전체 원고의 20% 분량 내 수정 2회를 제공합니다. 기획 방향 변경으로 인한 전면 수정은 불가합니다.', rationale: '수정 범위를 명확히 합니다.' }
+                ],
+                ip: [
+                    { title: '고스트라이팅(양도)', suggestion: '모든 저작권은 의뢰인에게 귀속되며, 작업자는 저작인격권(성명표시권)을 행사하지 않습니다.', rationale: '마케팅 원고나 대필의 경우 저작권을 완전히 넘기는 것이 일반적입니다.' },
+                    { title: '바이라인 명시형', suggestion: '저작재산권은 의뢰인에게 있으나, 발행 시 작업자의 이름(Byline)을 명시해야 합니다.', rationale: '기고문이나 칼럼 등 작가의 크레딧이 중요한 경우입니다.' }
+                ]
+            };
+            break;
+         case '마케팅':
+             industrySpecific = {
+                revisions: [
+                    { title: '캠페인 최적화형', suggestion: '광고 세팅 후 2주간의 초기 최적화(소재 교체, 타겟팅 조정)를 지원합니다. 이후의 관리는 별도 운영 계약을 따릅니다.', rationale: '퍼포먼스 마케팅은 수정보다는 지속적인 최적화 과정임을 명시합니다.' },
+                    { title: '사전 컨펌 필수', suggestion: '모든 콘텐츠 발행 전 의뢰인의 최종 승인을 득해야 하며, 승인된 콘텐츠 발행 후 발생한 문제에 대해 작업자는 책임지지 않습니다.', rationale: '마케팅 사고 방지를 위해 책임 소재를 명확히 합니다.' }
+                ],
+                ip: [
+                    { title: '데이터 소유권', suggestion: '광고 집행을 통해 축적된 데이터 및 계정 소유권은 의뢰인에게 귀속됩니다.', rationale: '계약 종료 후 계정 소유권 분쟁을 예방합니다.' },
+                    { title: '소재 사용 제한', suggestion: '제작된 마케팅 소재는 계약 기간 동안 해당 캠페인에만 사용 가능하며, 외부 배포나 상업적 재판매는 금지됩니다.', rationale: '계약 종료 후 소재 무단 사용을 막습니다.' }
+                ]
+            };
+            break;
+         case '번역':
+             industrySpecific = {
+                revisions: [
+                    { title: '오역 수정 무제한', suggestion: '명백한 오역이나 누락에 대해서는 기간/횟수 제한 없이 무상 수정을 제공합니다. 단, 단순 표현(스타일) 선호에 따른 수정은 1회로 제한합니다.', rationale: '품질에 대한 책임을 다하되, 주관적 취향에 의한 무한 수정을 막습니다.' },
+                    { title: '용어집 기반', suggestion: '사전에 합의된 용어집(Glossary)을 기준으로 작업하며, 용어집 미준수에 대한 수정은 무제한 제공합니다.', rationale: '전문 번역의 품질 기준을 세웁니다.' }
+                ],
+                ip: [
+                    { title: '납품형', suggestion: '번역 결과물의 저작권은 잔금 지급 시 의뢰인에게 양도됩니다.', rationale: '일반적인 비즈니스 번역의 형태입니다.' }
+                ]
+            };
+            break;
+          case '컨설팅/교육':
+             industrySpecific = {
+                revisions: [
+                    { title: '질의응답 포함형', suggestion: '최종 보고서 전달 후 1회의 수정 보완 및 1시간의 Q&A 세션을 제공합니다. 추가 자문은 시간당 비용이 청구됩니다.', rationale: '컨설팅은 결과물 자체보다 이해와 설명 과정이 중요합니다.' },
+                ],
+                 ip: [
+                    { title: '자료 사용권', suggestion: '제공된 교육 자료 및 보고서는 의뢰인 내부 목적으로만 사용 가능하며, 외부 배포나 상업적 재판매는 금지됩니다.', rationale: '컨설턴트의 지식 자산을 보호합니다.' }
+                ]
+            };
+            break;
+        default:
+             industrySpecific = {
+                 revisions: [{ title: '기본 수정형', suggestion: '최종 산출물 전달 후 2회 무료 수정을 제공합니다.', rationale: '표준적인 수정 조항입니다.'}],
+                 ip: [{ title: '저작권 양도', suggestion: '잔금 지급 시 저작권은 의뢰인에게 귀속됩니다.', rationale: '표준적인 저작권 조항입니다.'}]
+             };
+            break;
+    }
+
+    // 데이터 병합 (Payment는 공통으로 처리하되, 필요 시 industrySpecific에 추가 가능)
     return {
-        // ... (existing getClauseGuidance content kept for brevity, structure assumed same) ...
-        '로고/브랜딩 디자인': { ...commonClauses, revisions: [{ title: '횟수 지정형: 총 2회 수정', suggestion: '최초 시안(2종) 확인 후 1회, 최종 시안 확정 후 1회로 총 2회의 수정을 기본으로 제공합니다. 초과 수정은 별도 비용이 발생합니다.', rationale: `🤔 문제점: 기준 없는 수정 요청은 프로젝트 지연과 분쟁의 원인이 됩니다.\n\n💡 해결책: 명확한 수정 횟수를 정해 분쟁을 막고 프로젝트 지연을 방지합니다.` }, { title: '단계별 제한형: 단계별 수정', suggestion: '시안 단계(2회), 디벨롭 단계(2회), 최종 단계(1회) 등 각 단계별로 수정 횟수를 지정합니다. 단계가 넘어가면 이전 단계 수정은 불가능합니다.', rationale: `🤔 문제점: 프로젝트 막바지에 초기 시안을 다시 수정해달라는 요청은 큰 리소스 낭비입니다.\n\n💡 해결책: 단계별 수정 규칙을 정해 체계적인 디자인 프로세스를 확립하고, 회귀 수정을 방지합니다.` }], payment: [payment55, { title: '초기 집중형: 7:3 선금/잔금', suggestion: `총 계약금액: ${projectValue.toLocaleString()}원 (VAT 별도)\n- 선금(70%): 계약 체결 후 3일 이내 (${(projectValue * 0.7).toLocaleString()}원)\n- 잔금(30%): 최종 산출물 검수 완료 후 3일 이내 (${(projectValue * 0.3).toLocaleString()}원)`, rationale: `🤔 문제점: 디자인 작업은 초기 아이디어 구체화에 많은 시간이 소요되어, 프로젝트 중단 시 작업자의 피해가 클 수 있습니다.\n\n💡 해결책: 초기 리소스가 많이 투입되는 작업의 특성을 반영하여 작업자의 리스크를 줄입니다.` }], ip: [ipPortfolio, { title: '확장 양도형: 2차적 저작물 작성권 포함', suggestion: '잔금 지급 완료 시, 최종 결과물에 대한 저작재산권 및 2차적 저작물 작성권을 포함한 모든 권리가 의뢰인에게 양도됩니다. 채택되지 않은 시안의 저작권은 작업자에게 있습니다.', rationale: `🤔 문제점: 로고를 활용한 굿즈 제작 등 원본 변형이 예상될 때, 2차적 저작물 작성권에 대한 합의가 없으면 분쟁이 발생할 수 있습니다.\n\n💡 해결책: 권리 범위를 명확히 하여 향후 저작권 분쟁을 원천 차단하고 클라이언트의 활용도를 높입니다.` }] },
-        '웹/앱 UI/UX 디자인': { ...commonClauses, revisions: [{ title: '단계별 제한형: 회귀 수정 불가', suggestion: '와이어프레임 확정 후 1회, 전체 UI 디자인 완료 후 1회, 총 2회의 수정을 제공합니다. 각 단계가 완료되면 이전 단계로의 회귀 수정은 불가능합니다.', rationale: `🤔 문제점: UI/UX 디자인은 절차적 과정이 중요하므로, 이전 단계로의 회귀는 프로젝트 전체를 지연시킵니다.\n\n💡 해결책: 각 단계를 명확히 구분하고 수정 규칙을 정해, 체계적인 프로세스를 확립하고 비효율적인 재작업을 방지합니다.` }, { title: '시간 기반형: 월 단위 시간 보장 (리테이너)', suggestion: '기본 수정 2회 외에, 월 10시간의 추가 수정/자문 시간을 제공합니다. (3개월 계약) 초과 시간은 시간당 ${Math.round(projectValue / 100).toLocaleString()}원으로 계산하여 월말에 정산합니다.', rationale: `🤔 문제점: 초기 기획이 불분명한 프로젝트는 잦은 수정이 예상되어, 횟수 기반 계약은 비효율적일 수 있습니다.\n\n💡 해결책: 투입되는 시간을 기준으로 계약하여, 유연한 변경에 대응하고 투입된 노력에 대한 정당한 대가를 보장받습니다.` }], payment: [payment343, payment55], ip: [ipPortfolio, ipPortfolioFee] },
-        // ... (Rest of logic is same as previous, cutting for brevity as requested by strict change format) ...
+        ...commonClauses,
+        payment: [paymentClauses.standard, paymentClauses.split343],
+        ...industrySpecific
     };
 };
 
-const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }) => {
     const [step, setStep] = useState(1);
     const [infoStep, setInfoStep] = useState(0);
     const [clauseStep, setClauseStep] = useState(0);
+    const [showAnalysisModal, setShowAnalysisModal] = useState(false); // New: Modal State
+    
     const [formData, setFormData] = useState({
         clientName: '',
         freelancerName: '',
@@ -249,8 +314,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
     const [dateError, setDateError] = useState('');
     const clauseTitleRef = useRef<HTMLDivElement>(null);
 
-    const clauseGuidance = useMemo(() => getClauseGuidance(formData.projectValue), [formData.projectValue]);
-    const guidanceForTask = useMemo(() => clauseGuidance[formData.task as keyof typeof clauseGuidance] || {}, [clauseGuidance, formData.task]);
+    // Update: Pass industry to getClauseGuidance
+    const clauseGuidance = useMemo(() => getClauseGuidance(formData.projectValue, formData.industry, formData.task), [formData.projectValue, formData.industry, formData.task]);
+    
+    // Update: Logic to retrieve suggestions is now simplified as structure is normalized
+    // No need for "guidanceForTask" derived state as getClauseGuidance returns the flat object for the selected inputs
     
     const infoFields = useMemo(() => [
         { key: 'definition', title: '프로젝트 정의', description: '가장 중요한 프로젝트 종류를 먼저 선택해주세요.' },
@@ -274,6 +342,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
             const headerHeight = header ? header.offsetHeight + 24 : 96;
             const y = clauseTitleRef.current.getBoundingClientRect().top + window.scrollY - headerHeight;
             window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+        // Trigger Modal on Step 3
+        if (step === 3) {
+            setShowAnalysisModal(true);
         }
     }, [clauseStep, step]);
 
@@ -336,10 +408,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }
     useEffect(() => {
         const newDeliverables = DELIVERABLE_OPTIONS[formData.task];
         setFormData(prev => ({ ...prev, deliverables: newDeliverables || [] }));
-        const newGuidance = clauseGuidance[formData.task as keyof typeof clauseGuidance] || {};
+        
+        // Update: Apply suggestions from the expanded guidance
         const newClauses: any = {};
         Object.keys(clauses).forEach(key => {
-            const suggestions = (newGuidance as any)[key];
+            const suggestions = (clauseGuidance as any)[key];
             if (suggestions && suggestions.length > 0) {
                 newClauses[key] = suggestions[0].suggestion;
             } else {
@@ -462,27 +535,73 @@ ${formattedDate}
 
     const handleDownloadPdf = () => {
         const element = document.getElementById('contract-print-area');
-        
-        // Validation: Check if element exists and has content
-        if (!element || element.innerText.trim().length === 0) {
-            alert('출력할 계약서 내용이 없습니다.');
+
+        if (!element) {
+            alert("⚠️ 오류: 출력할 계약서 영역을 찾을 수 없습니다.");
             return;
         }
-    
+
+        const container = document.createElement('div');
+        // Place container off-screen but in a way html2canvas can render it
+        container.style.position = 'fixed';
+        container.style.top = '0';
+        container.style.left = '-10000px';
+        container.style.width = '210mm';
+        container.style.height = 'auto';
+        container.style.zIndex = '-9999';
+        
+        const clone = element.cloneNode(true) as HTMLElement;
+        clone.id = 'contract-print-clone';
+        
+        // Reset styles for the clone to ensure visibility in the PDF container
+        clone.style.position = 'relative'; 
+        clone.style.left = 'auto';
+        clone.style.top = 'auto';
+        clone.style.display = 'block';
+        clone.style.margin = '0 auto';
+        clone.style.backgroundColor = 'white';
+        
+        container.appendChild(clone);
+        document.body.appendChild(container);
+
+        // Filename Logic Updated: Removed (by FreeZone) suffix
+        const safeProjectName = formData.projectName.trim().replace(/[^a-zA-Z0-9가-힣\s]/g, '') || '프로젝트';
+        const filename = `${safeProjectName}_표준계약서.pdf`;
+
         const opt = {
-            margin: 10,
-            filename: 'Freezone_contract.pdf',
+            margin: 0,
+            filename: filename,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, logging: true },
+            html2canvas: { 
+                scale: 2, 
+                logging: false,
+                useCORS: true, 
+                windowWidth: 800,
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-    
+
         // @ts-ignore
         if (window.html2pdf) {
             // @ts-ignore
-            window.html2pdf().set(opt).from(element).save();
+            window.html2pdf().set(opt).from(container).save()
+                .then(() => {
+                    if(document.body.contains(container)) {
+                         document.body.removeChild(container);
+                    }
+                })
+                .catch((err: any) => {
+                    console.error(err);
+                    alert("PDF 생성 중 오류가 발생했습니다.");
+                    if(document.body.contains(container)) {
+                         document.body.removeChild(container);
+                    }
+                });
         } else {
-            alert("PDF 생성 라이브러리를 로드하는 중입니다. 잠시 후 다시 시도해주세요.");
+             alert("PDF 생성 라이브러리를 로드하는 중입니다. 잠시 후 다시 시도해주세요.");
+             if(document.body.contains(container)) {
+                  document.body.removeChild(container);
+             }
         }
     };
 
@@ -499,7 +618,7 @@ ${formattedDate}
     };
 
     const AnalysisItem: React.FC<{ title: string; description: string; isValid: boolean }> = ({ title, description, isValid }) => (
-        <div className="flex items-start space-x-3">
+        <div className="flex items-start space-x-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
             <div className="flex-shrink-0 mt-0.5">
                 {isValid ? (
                     <AnalysisValidIcon className="h-5 w-5 text-emerald-500" />
@@ -508,13 +627,14 @@ ${formattedDate}
                 )}
             </div>
             <div>
-                <h4 className="font-bold text-slate-800">{title}</h4>
-                <p className="text-xs text-slate-500">{description}</p>
+                <h4 className="font-bold text-slate-800 text-sm">{title}</h4>
+                <p className="text-xs text-slate-500 mt-0.5">{description}</p>
             </div>
         </div>
     );
     
-    const ContractAnalysis = () => {
+    // Updated: Analysis is now a Modal Content
+    const AnalysisModalContent = () => {
         const checks = {
             parties: formData.clientName.trim() !== '' && formData.freelancerName.trim() !== '',
             scope: formData.task.trim() !== '' && formData.deliverables.length > 0 && formData.deliverables.every(d => d.trim() !== ''),
@@ -526,29 +646,59 @@ ${formattedDate}
         const allValid = Object.values(checks).every(Boolean);
 
         return (
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-6 h-fit">
-                <h3 className="flex items-center space-x-3 text-xl font-bold text-slate-900">
-                    <ShieldCheckIcon className="h-7 w-7 text-primary-500 flex-shrink-0" />
-                    <span>계약서 신뢰도 분석</span>
-                </h3>
-                <p className="text-sm text-slate-600 -mt-4">
-                    FreeZone의 AI가 실시간으로 계약서를 분석하여, 분쟁을 막고 당신을 보호할 핵심 조항들이 잘 포함되었는지 확인해 드립니다.
-                </p>
-                <div className="space-y-4">
-                    <AnalysisItem isValid={checks.parties} title="핵심 당사자 명시" description="분쟁 발생 시 책임 소재를 명확히 하기 위한 필수 정보입니다." />
-                    <AnalysisItem isValid={checks.scope} title="구체적인 과업 범위" description="'해줘' 식의 추가 요청을 방지하는 가장 중요한 조항입니다." />
-                    <AnalysisItem isValid={checks.payment} title="명확한 대금 지급 조건" description="미수금 위험을 줄이고 안정적인 수입을 보장합니다." />
-                    <AnalysisItem isValid={checks.ip} title="저작권 귀속 명시" description="작업물의 소유권을 명확히 하여 2차 분쟁을 예방합니다." />
-                    <AnalysisItem isValid={checks.expert} title="표준 양식 기반" description="업계 표준 조항을 기반으로 작성되어 법적 안정성을 더합니다." />
-                </div>
-                 {allValid && (
-                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-center space-y-2">
-                        <p className="font-bold text-emerald-700">완벽한 보호 장치가 마련되었어요!</p>
-                        <p className="text-sm text-emerald-600">
-                            이 계약서는 구두 계약이나 불분명한 합의와 달리, 양측의 권리와 의무를 명확히 하여 잠재적인 분쟁을 예방하는 강력한 법적 근거가 됩니다.
-                        </p>
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-lg w-full mx-4">
+                <div className="bg-gradient-to-r from-primary-600 to-primary-800 p-6 flex justify-between items-center">
+                    <div className="flex items-center space-x-3">
+                         <div className="bg-white/20 p-2 rounded-lg">
+                            <ShieldCheckIcon className="h-6 w-6 text-white" />
+                         </div>
+                         <div>
+                            <h3 className="text-lg font-bold text-white">AI 계약서 신뢰도 분석</h3>
+                            <p className="text-primary-100 text-xs">FreeZone AI Engine</p>
+                         </div>
                     </div>
-                )}
+                    <button onClick={() => setShowAnalysisModal(false)} className="text-white/70 hover:text-white transition-colors">
+                        <XMarkIcon className="h-6 w-6" />
+                    </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                    <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        작성하신 계약서의 법적 안정성을 실시간으로 분석했습니다. <br/>
+                        <span className="font-bold text-slate-800">분쟁 발생 위험도: {allValid ? '매우 낮음 (안전)' : '중간 (확인 필요)'}</span>
+                    </p>
+
+                    <div className="space-y-2">
+                        <AnalysisItem isValid={checks.parties} title="핵심 당사자 명시" description="책임 소재가 명확한가요?" />
+                        <AnalysisItem isValid={checks.scope} title="구체적인 과업 범위" description="추가 과업 방지가 가능한가요?" />
+                        <AnalysisItem isValid={checks.payment} title="명확한 대금 지급 조건" description="미수금 위험이 관리되고 있나요?" />
+                        <AnalysisItem isValid={checks.ip} title="저작권 귀속 명시" description="소유권 분쟁 가능성이 없나요?" />
+                        <AnalysisItem isValid={checks.expert} title="업계 표준 준수" description="불공정 조항이 포함되지 않았나요?" />
+                    </div>
+
+                     {allValid ? (
+                        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-center space-y-1">
+                            <p className="font-bold text-emerald-700 text-sm">✨ 완벽한 보호 장치가 마련되었어요!</p>
+                            <p className="text-xs text-emerald-600 leading-relaxed">
+                                이 계약서는 당신의 권리를 강력하게 보호합니다.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg text-center space-y-1">
+                             <p className="font-bold text-rose-700 text-sm">⚠️ 일부 정보가 부족합니다</p>
+                             <p className="text-xs text-rose-600 leading-relaxed">
+                                빈칸이나 모호한 표현이 있으면 추후 분쟁의 소지가 있습니다. 이전 단계로 돌아가 내용을 보완하는 것을 추천합니다.
+                             </p>
+                        </div>
+                    )}
+                    
+                    <button 
+                        onClick={() => setShowAnalysisModal(false)}
+                        className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg"
+                    >
+                        확인 완료 (계약서 보기)
+                    </button>
+                </div>
             </div>
         );
     };
@@ -556,6 +706,13 @@ ${formattedDate}
 
   return (
     <div className="bg-slate-950 text-slate-300">
+      {/* Analysis Modal Overlay */}
+      {showAnalysisModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+            <AnalysisModalContent />
+        </div>
+      )}
+
       <section ref={contractRef} className="relative overflow-hidden bg-slate-950">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-900/40 via-slate-950 to-slate-950"></div>
         <div className="absolute top-[-10rem] right-[-10rem] w-96 h-96 bg-primary-500/20 rounded-full blur-3xl animate-pulse"></div>
@@ -589,14 +746,14 @@ ${formattedDate}
             {step === 1 && (() => {
                 const currentInfoField = infoFields[infoStep];
                 return (
-                    <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl space-y-8 animate-fade-in max-w-5xl mx-auto">
+                    <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl space-y-8 max-w-5xl mx-auto">
                         <div>
                             <h2 className="text-2xl font-bold text-slate-900 mb-1">기본 정보 입력 ({infoStep + 1}/{infoFields.length})</h2>
                             <p className="text-slate-600">{currentInfoField.description}</p>
                         </div>
 
                         {infoStep === 0 && (
-                            <div className="space-y-8 animate-fade-in pt-4">
+                            <div className="space-y-8 pt-4">
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
                                         <label htmlFor="industry" className="font-semibold text-slate-700">분야</label>
@@ -623,7 +780,7 @@ ${formattedDate}
                         )}
                         
                         {infoStep === 1 && (
-                            <div className="space-y-8 animate-fade-in pt-4">
+                            <div className="space-y-8 pt-4">
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>
                                         <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
@@ -654,7 +811,7 @@ ${formattedDate}
                         )}
                         
                         {infoStep === 2 && (
-                            <div className="space-y-8 animate-fade-in pt-4">
+                            <div className="space-y-8 pt-4">
                                 <div>
                                     <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
                                         <label htmlFor="projectValue" className="font-semibold text-slate-700">총 계약 금액 (VAT 별도)</label>
@@ -703,10 +860,10 @@ ${formattedDate}
             
             {step === 2 && (() => {
                 const currentClauseField = clauseFields[clauseStep];
-                const suggestions = (guidanceForTask as any)?.[currentClauseField.key] || [];
+                const suggestions = (clauseGuidance as any)?.[currentClauseField.key] || [];
 
                 return (
-                    <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl space-y-8 animate-fade-in max-w-5xl mx-auto">
+                    <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl space-y-8 max-w-5xl mx-auto">
                         <div ref={clauseTitleRef}>
                             <h2 className="text-2xl font-bold text-slate-900 mb-1">세부 조항 선택 ({clauseStep + 1}/{clauseFields.length})</h2>
                             <p className="text-slate-600">분쟁을 막는 핵심 조항들을 꼼꼼하게 선택하고, 필요하다면 직접 수정하세요.</p>
@@ -801,38 +958,61 @@ ${formattedDate}
             })()}
 
             {step === 3 && (
-                <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl animate-fade-in max-w-7xl mx-auto">
-                     <div>
-                        <h2 className="text-2xl font-bold text-slate-900 mb-1">계약서 검토 및 완성</h2>
-                        <p className="text-slate-600">최종 내용을 확인하고 계약을 완성하세요.</p>
+                <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl max-w-5xl mx-auto">
+                     <div className="flex justify-between items-start">
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-900 mb-1">계약서 검토 및 완성</h2>
+                            <p className="text-slate-600">최종 내용을 확인하고 계약을 완성하세요.</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowAnalysisModal(true)}
+                            className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-4 py-2 rounded-full transition-colors"
+                        >
+                            <ShieldCheckIcon className="h-5 w-5" />
+                            <span>분석 리포트 다시 보기</span>
+                        </button>
                     </div>
                     
-                    <div className="mt-8 grid lg:grid-cols-3 gap-8 items-start">
-                        <div className="lg:col-span-2 relative">
+                    <div className="mt-8">
+                        <div className="relative">
                             <div className="p-8 bg-slate-50 border border-slate-200 rounded-lg max-h-[70vh] overflow-y-auto transition-all duration-300">
                                 <pre id="contract-content" className="whitespace-pre-wrap font-sans text-sm text-slate-800 leading-relaxed">
                                     {generateContractText()}
                                 </pre>
                             </div>
                         </div>
-                        <div className="lg:col-span-1">
-                            <ContractAnalysis />
+                    </div>
+                    
+                    <div className="mt-8 flex flex-col items-center space-y-3 w-full max-w-lg mx-auto">
+                        <div className="flex flex-col sm:flex-row gap-3 w-full">
+                            {/* Copy Text Button - Style Enhanced */}
+                            <button onClick={handleCopy} className="flex-1 flex items-center justify-center px-6 py-3.5 border-2 border-slate-100 text-sm font-bold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 hover:border-slate-300 transition-all">
+                                <DocumentDuplicateIcon className="h-5 w-5 mr-2 text-slate-600" />
+                                텍스트만 복사
+                            </button>
+                            {/* PDF Button - Primary */}
+                            <button onClick={handleDownloadPdf} className="flex-1 flex items-center justify-center px-6 py-3.5 border border-transparent text-sm font-bold rounded-xl text-white bg-primary-600 hover:bg-primary-500 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                                PDF로 저장하기
+                            </button>
+                        </div>
+
+                        {/* Sending Helper Section - Yellow Theme & One-line layout */}
+                        <div className="w-full bg-yellow-50 rounded-xl p-3 border border-yellow-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div className="text-center sm:text-left flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="text-sm font-bold text-slate-800 whitespace-nowrap">계약서를 보내시나요?</span>
+                                <span className="text-xs text-slate-600 sm:truncate">파일만 덜렁 보내기 민망하다면 활용해보세요.</span>
+                            </div>
+                            <button 
+                                onClick={handleCopyKakao} 
+                                className="flex-shrink-0 flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg text-[#3c1e1e] bg-[#FEE500] hover:bg-[#FDD835] transition-all shadow-sm whitespace-nowrap"
+                            >
+                                <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 mr-1.5" />
+                                전송 멘트 복사
+                            </button>
                         </div>
                     </div>
-                    <div className="mt-8 flex flex-wrap gap-4 justify-center min-h-[40px]">
-                        <button onClick={handleCopy} className="flex items-center justify-center px-5 py-3 border border-slate-300 text-sm font-bold rounded-full text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors">
-                            <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
-                            본문 복사
-                        </button>
-                        <button onClick={handleDownloadPdf} className="flex items-center justify-center px-5 py-3 border border-transparent text-sm font-bold rounded-full text-white bg-[#007bff] hover:bg-blue-700 transition-colors shadow-md">
-                            <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-                            PDF로 저장하기
-                        </button>
-                        <button onClick={handleCopyKakao} className="flex items-center justify-center px-5 py-3 border border-transparent text-sm font-bold rounded-full text-[#3C1E1E] bg-[#FEE500] hover:bg-[#E6D000] transition-colors shadow-md">
-                            <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5 mr-2" />
-                            카톡 전송 멘트 복사
-                        </button>
-                    </div>
+
                     <div className="mt-12 flex justify-between">
                          <button onClick={handleBackToClauses} className="inline-flex items-center justify-center px-6 py-3 border border-slate-300 text-base font-bold rounded-full text-slate-700 bg-white hover:bg-slate-100 transition-colors">이전</button>
                     </div>
@@ -940,9 +1120,10 @@ ${formattedDate}
             </div>
         </div>
       </section>
-
-      {/* ALWAYS RENDERED PDF TEMPLATE (HIDDEN) */}
-      <div id="contract-print-area" style={{ position: 'absolute', top: 0, left: '-10000px', width: '210mm', minHeight: '297mm', padding: '20mm', backgroundColor: 'white', color: 'black', fontFamily: 'Batang, serif', lineHeight: '1.6', zIndex: -1000 }}>
+      
+      {/* Contract Print Area - Moved to bottom and using fixed positioning to avoid layout issues */}
+      <div id="contract-print-area" style={{ position: 'fixed', top: 0, left: '-10000px', width: '210mm', backgroundColor: 'white', zIndex: -1 }}>
+           <div style={{ padding: '20mm', backgroundColor: 'white', color: 'black', fontFamily: 'Batang, serif', lineHeight: '1.6', wordBreak: 'keep-all' }}>
             <h1 style={{ textAlign: 'center', fontSize: '24pt', fontWeight: 'bold', marginBottom: '30px', borderBottom: '2px solid black', paddingBottom: '10px' }}>용역 계약서</h1>
             
             <p style={{ marginBottom: '20px' }}>본 계약은 아래의 당사자 간에 체결된다.</p>
@@ -1057,5 +1238,3 @@ ${formattedDate}
     </div>
   );
 };
-
-export default LandingPage;
