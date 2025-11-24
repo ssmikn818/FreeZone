@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback, RefObject, useRef } from 'react';
 import { Tab } from '../types';
 import { DocumentTextIcon, ShareIcon, SignatureIcon, ShieldCheckIcon, DocumentDuplicateIcon, ScaleIcon, PlusIcon, LightBulbIcon, CheckCircleIcon, ScopeIcon, RevisionsIcon, DollarIcon, IPRightsIcon, TerminationIcon, FeedbackIcon, ClipboardIcon, PrinterIcon, XMarkIcon, QuestionMarkCircleIcon, PencilSquareIcon, ArrowLeftIcon, PaletteIcon, CodeIcon, BriefcaseIcon, ClockIcon, BellIcon, CheckBadgeIcon, AnalysisValidIcon, AnalysisInvalidIcon, ArrowDownTrayIcon, ChatBubbleOvalLeftEllipsisIcon } from './Icons';
@@ -541,30 +542,32 @@ ${formattedDate}
             return;
         }
 
+        // Create a temporary container for the PDF generation
         const container = document.createElement('div');
-        // Place container off-screen but in a way html2canvas can render it
-        container.style.position = 'fixed';
+        
+        // Position it visibly in the DOM but behind everything else
+        // This avoids blank page issues common with off-screen rendering in html2canvas
+        container.style.position = 'absolute';
         container.style.top = '0';
-        container.style.left = '-10000px';
+        container.style.left = '0';
         container.style.width = '210mm';
-        container.style.height = 'auto';
         container.style.zIndex = '-9999';
+        container.style.backgroundColor = 'white';
         
         const clone = element.cloneNode(true) as HTMLElement;
         clone.id = 'contract-print-clone';
         
-        // Reset styles for the clone to ensure visibility in the PDF container
-        clone.style.position = 'relative'; 
+        // Reset styles on clone to ensure it displays correctly in the container
+        clone.style.position = 'static'; 
         clone.style.left = 'auto';
         clone.style.top = 'auto';
         clone.style.display = 'block';
+        clone.style.transform = 'none';
         clone.style.margin = '0 auto';
-        clone.style.backgroundColor = 'white';
         
         container.appendChild(clone);
         document.body.appendChild(container);
 
-        // Filename Logic Updated: Removed (by FreeZone) suffix
         const safeProjectName = formData.projectName.trim().replace(/[^a-zA-Z0-9가-힣\s]/g, '') || '프로젝트';
         const filename = `${safeProjectName}_표준계약서.pdf`;
 
@@ -577,6 +580,7 @@ ${formattedDate}
                 logging: false,
                 useCORS: true, 
                 windowWidth: 800,
+                scrollY: 0 // Important: Capture from top of the document
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
