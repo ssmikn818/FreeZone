@@ -550,34 +550,37 @@ ${formattedDate}
         setTimeout(() => {
             // Save original styles
             const originalStyle = element.getAttribute('style') || '';
-            const innerDiv = element.querySelector('div');
+            const innerDiv = element.firstElementChild as HTMLElement;
             const originalInnerStyle = innerDiv ? innerDiv.getAttribute('style') || '' : '';
 
-            // Apply "Screen Takeover" styles
-            // Force visibility and top-level positioning
+            // Apply "Screen Takeover" styles with forced visibility and height
+            // This ensures html2canvas sees the full content expanded
             element.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                z-index: 99999;
-                background-color: white;
-                overflow-y: auto;
-                display: flex;
-                justify-content: center;
-                align-items: flex-start;
+                position: fixed !important;
+                top: 0 !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                width: 210mm !important;
+                height: auto !important;
+                min-height: 100vh !important;
+                z-index: 99999 !important;
+                background-color: white !important;
+                color: black !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                display: block !important;
             `;
 
-            // Adjust inner content to look like A4 paper in the center
+            // Ensure inner div also expands and doesn't scroll
             if (innerDiv) {
                 innerDiv.style.cssText = `
-                    width: 210mm;
-                    min-height: 297mm;
-                    background-color: white;
-                    padding: 20mm;
-                    box-shadow: none;
-                    margin: 0 auto;
+                    width: 100% !important;
+                    height: auto !important;
+                    background-color: white !important;
+                    padding: 10mm 25mm 20mm 25mm !important;
+                    box-shadow: none !important;
+                    margin: 0 auto !important;
+                    overflow: visible !important;
                 `;
             }
 
@@ -585,15 +588,17 @@ ${formattedDate}
             const filename = `${safeProjectName}_표준계약서.pdf`;
 
             const opt = {
-                margin: 0,
+                margin: [15, 0, 15, 0], // Top, Left, Bottom, Right
                 filename: filename,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
                     logging: false, 
                     useCORS: true, 
-                    scrollY: 0,
-                    windowWidth: document.documentElement.clientWidth // Capture viewport width
+                    scrollY: 0, // Critical: capture from the top
+                    windowWidth: document.documentElement.offsetWidth, // Ensure responsive width is correct
+                    height: element.scrollHeight, // Force full height capture
+                    windowHeight: element.scrollHeight // Force full height capture
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
@@ -1265,7 +1270,7 @@ ${formattedDate}
             </div>
             
              <div style={{ marginTop: '40px', textAlign: 'center', fontSize: '9pt', color: '#9ca3af' }}>
-                본 계약서는 FreeZone (https://freezone-1061689217082.us-west1.run.app/) 서비스를 통해 작성되었습니다.
+                본 계약서는 FreeZone 서비스를 통해 작성되었습니다.
             </div>
       </div>
     </div>
