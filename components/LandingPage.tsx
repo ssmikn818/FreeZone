@@ -293,7 +293,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToCon
     
     const [formData, setFormData] = useState({
         clientName: '',
+        clientContact: '', // Added contact info
+        clientAddress: '', // Added address info
         freelancerName: '',
+        freelancerContact: '', // Added contact info
+        freelancerAddress: '', // Added address info
         projectName: '',
         industry: '',
         task: '',
@@ -477,53 +481,63 @@ export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToCon
         const formattedDate = getFormattedDate(formData.contractDate);
 
         return `
-용역 계약서
+표준 용역 계약서
 
-본 계약은 아래의 당사자 간에 체결된다.
+본 계약은 ${formattedDate}, 의뢰인 "${formData.clientName || '(의뢰인)'}"(이하 "갑")과 작업자 "${formData.freelancerName || '(작업자)'}"(이하 "을") 간에 다음과 같이 체결되었다.
 
-- 의뢰인 (이하 "갑"): ${formData.clientName || '(의뢰인 이름)'}
-- 작업자 (이하 "을"): ${formData.freelancerName || '(작업자 이름)'}
-
-제 1 조 (계약의 목적)
-"을"은 "갑"의 의뢰에 따라 ‘${formData.projectName || '(프로젝트명)'}’ 프로젝트(이하 "본 용역")를 수행하고, "갑"은 이에 대한 보수를 지급하는 것을 목적으로 한다.
+제 1 조 (목적)
+본 계약은 "갑"이 의뢰한 '${formData.projectName || '(프로젝트명)'}'(이하 "본 용역")을 "을"이 수행하고, "갑"이 이에 대한 대가를 지급함에 있어 필요한 제반 사항을 규정함을 목적으로 한다.
 
 제 2 조 (용역의 범위 및 내용)
 "을"이 수행할 용역의 범위는 다음 각 호와 같다.
 1. 주요 과업: ${formData.task}
 2. 최종 산출물:
 ${formData.deliverables.map(d => `   - ${d}`).join('\n')}
-3. 기타:
+3. 상세 내용:
 ${clauses.scope || '(상호 협의 하에 정한 구체적인 작업 내용)'}
 
 제 3 조 (계약 기간)
-본 용역의 수행 기간은 ${formData.startDate}부터 ${formData.endDate}까지로 한다.
+본 용역의 수행 기간은 ${getFormattedDate(formData.startDate)}부터 ${getFormattedDate(formData.endDate)}까지로 한다.
 
 제 4 조 (계약 금액 및 지급 방법)
-1. 총 계약 금액: 총 ${formData.projectValue.toLocaleString('ko-KR')} 원 (금 ${numberToKoreanWon(formData.projectValue)} 원정), 부가가치세 별도
+1. 총 계약 금액: 일금 ${numberToKoreanWon(formData.projectValue)} 원정 (₩${formData.projectValue.toLocaleString('ko-KR')}), 부가가치세 별도
 2. 지급 방법:
 ${clauses.payment || CLAUSE_PLACEHOLDERS.payment}
 
 제 5 조 (수정 및 검수)
 ${clauses.revisions || CLAUSE_PLACEHOLDERS.revisions}
 
-제 6 조 (저작권 귀속)
+제 6 조 (지식재산권의 귀속)
 ${clauses.ip || CLAUSE_PLACEHOLDERS.ip}
 
-제 7 조 (피드백 및 소통)
+제 7 조 (상호 협조 및 소통)
 ${clauses.feedback || CLAUSE_PLACEHOLDERS.feedback}
 
 제 8 조 (계약의 해지)
 ${clauses.termination || CLAUSE_PLACEHOLDERS.termination}
 
-제 9 조 (비밀유지 의무 및 기타)
+제 9 조 (비밀유지)
 ${clauses.review || CLAUSE_PLACEHOLDERS.review}
 
-본 계약의 내용을 증명하기 위하여 계약서 2부를 작성하여 "갑"과 "을"이 서명 또는 날인한 후 각각 1부씩 보관한다.
+제 10 조 (분쟁의 해결)
+본 계약과 관련하여 분쟁이 발생한 경우 당사자 간의 합의에 의해 해결함을 원칙으로 하며, 합의가 이루어지지 않을 경우 "갑"의 소재지를 관할하는 법원을 전속 관할 법원으로 한다.
+
+제 11 조 (기타)
+본 계약에 명시되지 않은 사항은 상관례 및 관계 법령에 따른다.
+
+본 계약의 성립을 증명하기 위하여 계약서 2부를 작성하여 "갑"과 "을"이 기명날인 후 각각 1부씩 보관한다.
 
 ${formattedDate}
 
-갑 (의뢰인): ${formData.clientName || '________________'} (서명/인)
-을 (작업자): ${formData.freelancerName || '________________'} (서명/인)
+[의뢰인 (갑)]
+성명/상호: ${formData.clientName || '________________'} (서명/인)
+연락처: ${formData.clientContact || '________________'}
+주소: ${formData.clientAddress || '________________'}
+
+[작업자 (을)]
+성명/상호: ${formData.freelancerName || '________________'} (서명/인)
+연락처: ${formData.freelancerContact || '________________'}
+주소: ${formData.freelancerAddress || '________________'}
     `}, [formData, clauses]);
 
     const handleCopy = useCallback(() => {
@@ -569,6 +583,7 @@ ${formattedDate}
                 margin: 0 !important;
                 overflow: visible !important;
                 display: block !important;
+                font-family: 'Noto Sans KR', sans-serif !important;
             `;
 
             // Ensure inner div also expands and doesn't scroll
@@ -577,7 +592,7 @@ ${formattedDate}
                     width: 100% !important;
                     height: auto !important;
                     background-color: white !important;
-                    padding: 10mm 25mm 20mm 25mm !important;
+                    padding: 15mm 20mm 20mm 20mm !important;
                     box-shadow: none !important;
                     margin: 0 auto !important;
                     overflow: visible !important;
@@ -588,7 +603,7 @@ ${formattedDate}
             const filename = `${safeProjectName}_표준계약서.pdf`;
 
             const opt = {
-                margin: [15, 0, 15, 0], // Top, Left, Bottom, Right
+                margin: [10, 0, 10, 0], // Top, Left, Bottom, Right
                 filename: filename,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
@@ -642,7 +657,7 @@ ${formattedDate}
 🌐 무료로 작성하기: https://freezone-1061689217082.us-west1.run.app/`;
     
         navigator.clipboard.writeText(message).then(() => {
-            alert("전송 멘트가 복사되었습니다! 카톡 채팅창에 붙여넣으세요.");
+            alert("카톡 인사말이 복사되었습니다! 채팅창에 붙여넣으세요.");
         });
     };
 
@@ -819,17 +834,25 @@ ${formattedDate}
                         
                         {infoStep === 1 && (
                             <div className="space-y-8 pt-4">
+                                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800 flex items-start gap-2">
+                                    <LightBulbIcon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                    <p>연락처와 주소는 <strong>선택 사항</strong>입니다. 입력하지 않으시면 <strong>빈칸(밑줄)</strong>으로 생성되며, 추후 자필로 작성하거나 파일 변환 후 직접 입력하실 수 있습니다.</p>
+                                </div>
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div>
-                                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                            <label htmlFor="clientName" className="font-semibold text-slate-700">의뢰인 (갑)</label>
-                                            <input type="text" id="clientName" name="clientName" value={formData.clientName} onChange={handleFormChange} placeholder="클라이언트 이름 또는 회사명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-3">
+                                            <label htmlFor="clientName" className="font-semibold text-slate-700 mb-1 block">의뢰인 (갑)</label>
+                                            <input type="text" id="clientName" name="clientName" value={formData.clientName} onChange={handleFormChange} placeholder="성함 또는 회사명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                            <input type="text" name="clientContact" value={formData.clientContact} onChange={handleFormChange} placeholder="연락처 (선택)" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                            <input type="text" name="clientAddress" value={formData.clientAddress} onChange={handleFormChange} placeholder="주소 (선택)" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
                                         </div>
                                     </div>
                                     <div>
-                                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                            <label htmlFor="freelancerName" className="font-semibold text-slate-700">작업자 (을)</label>
-                                            <input type="text" id="freelancerName" name="freelancerName" value={formData.freelancerName} onChange={handleFormChange} placeholder="본인 이름 또는 활동명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-3">
+                                            <label htmlFor="freelancerName" className="font-semibold text-slate-700 mb-1 block">작업자 (을)</label>
+                                            <input type="text" id="freelancerName" name="freelancerName" value={formData.freelancerName} onChange={handleFormChange} placeholder="성함 또는 활동명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                            <input type="text" name="freelancerContact" value={formData.freelancerContact} onChange={handleFormChange} placeholder="연락처 (선택)" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                                            <input type="text" name="freelancerAddress" value={formData.freelancerAddress} onChange={handleFormChange} placeholder="주소 (선택)" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
                                         </div>
                                     </div>
                                 </div>
@@ -1036,17 +1059,17 @@ ${formattedDate}
                         </div>
 
                         {/* Sending Helper Section - Yellow Theme & One-line layout */}
-                        <div className="w-full bg-yellow-50 rounded-xl p-3 border border-yellow-200 flex flex-col sm:flex-row items-center justify-between gap-3 max-w-lg">
-                            <div className="text-center sm:text-left flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                <span className="text-sm font-bold text-slate-800 whitespace-nowrap">계약서를 보내시나요?</span>
-                                <span className="text-xs text-slate-600 sm:truncate">파일만 덜렁 보내기 민망하다면 활용해보세요.</span>
+                        <div className="w-full bg-yellow-50 rounded-xl p-4 border border-yellow-200 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-lg">
+                            <div className="text-center sm:text-left flex-1">
+                                <p className="text-sm font-bold text-slate-800 mb-1">카카오톡으로 계약서를 보내시나요?</p>
+                                <p className="text-xs text-slate-600 break-keep">파일만 덜렁 보내기 민망하다면? <br className="hidden sm:block"/> 정중한 인사말을 복사해서 함께 보내보세요.</p>
                             </div>
                             <button 
                                 onClick={handleCopyKakao} 
-                                className="flex-shrink-0 flex items-center justify-center px-4 py-2 text-xs font-bold rounded-lg text-[#3c1e1e] bg-[#FEE500] hover:bg-[#FDD835] transition-all shadow-sm whitespace-nowrap"
+                                className="flex-shrink-0 flex items-center justify-center px-4 py-3 text-sm font-bold rounded-lg text-[#3c1e1e] bg-[#FEE500] hover:bg-[#FDD835] transition-all shadow-sm whitespace-nowrap"
                             >
-                                <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 mr-1.5" />
-                                전송 멘트 복사
+                                <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 mr-2" />
+                                인사말 복사하기
                             </button>
                         </div>
                     </div>
@@ -1161,115 +1184,172 @@ ${formattedDate}
       
       {/* Contract Print Area - Hidden source for PDF generation */}
       <div id="contract-print-area" style={{ position: 'fixed', top: 0, left: '-10000px', width: '210mm', backgroundColor: 'white', zIndex: -1 }}>
-           <div style={{ padding: '20mm', backgroundColor: 'white', color: 'black', fontFamily: 'Batang, serif', lineHeight: '1.6', wordBreak: 'keep-all' }}>
-            <h1 style={{ textAlign: 'center', fontSize: '24pt', fontWeight: 'bold', marginBottom: '30px', borderBottom: '2px solid black', paddingBottom: '10px' }}>용역 계약서</h1>
+           <div style={{ padding: '20mm', backgroundColor: 'white', color: 'black', fontFamily: "'Noto Sans KR', sans-serif", lineHeight: '1.8', wordBreak: 'keep-all' }}>
+            <h1 style={{ textAlign: 'center', fontSize: '26pt', fontWeight: 'bold', marginBottom: '40px', letterSpacing: '-1px' }}>표준 용역 계약서</h1>
             
-            <p style={{ marginBottom: '20px' }}>본 계약은 아래의 당사자 간에 체결된다.</p>
+            <p style={{ marginBottom: '30px', textAlign: 'justify' }}>본 계약은 <strong>{getFormattedDate(formData.contractDate)}</strong>, 의뢰인 <strong>"{formData.clientName || ''}"</strong>(이하 "갑")과 작업자 <strong>"{formData.freelancerName || ''}"</strong>(이하 "을") 간에 다음과 같이 체결되었다.</p>
             
-            <div style={{ marginBottom: '30px', padding: '15px', backgroundColor: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '4px' }}>
-                 <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '8px', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 'bold' }}>의뢰인 (갑):</span>
-                    <span>{formData.clientName || '(의뢰인 성함)'}</span>
-                 </div>
-                 <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '8px' }}>
-                    <span style={{ fontWeight: 'bold' }}>작업자 (을):</span>
-                    <span>{formData.freelancerName || '(작업자 성함)'}</span>
-                 </div>
+            <div style={{ marginBottom: '40px' }}>
+                 <table style={{ borderCollapse: 'collapse', fontSize: '11pt', lineHeight: '1.8' }}>
+                    <tbody>
+                        <tr>
+                            <td style={{ width: '90px', fontWeight: 'bold', verticalAlign: 'top' }}>의뢰인 (갑)</td>
+                            <td style={{ width: '15px', verticalAlign: 'top' }}>:</td>
+                            <td>{formData.clientName || ''}</td>
+                        </tr>
+                        <tr>
+                            <td style={{ width: '90px', fontWeight: 'bold', verticalAlign: 'top' }}>작업자 (을)</td>
+                            <td style={{ width: '15px', verticalAlign: 'top' }}>:</td>
+                            <td>{formData.freelancerName || ''}</td>
+                        </tr>
+                    </tbody>
+                 </table>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 1 조 (계약의 목적)</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 1 조 (목적)</h2>
                     <p style={{ textAlign: 'justify' }}>
-                        "을"은 "갑"의 의뢰에 따라 <strong>‘{formData.projectName || '(프로젝트명)'}’</strong> 프로젝트(이하 "본 용역")를 수행하고, "갑"은 이에 대한 보수를 지급하는 것을 목적으로 한다.
+                        본 계약은 "갑"이 의뢰한 <strong>‘{formData.projectName || '(프로젝트명)'}’</strong>(이하 "본 용역")을 "을"이 수행하고, "갑"이 이에 대한 대가를 지급함에 있어 필요한 제반 사항을 규정함을 목적으로 한다.
                     </p>
                 </section>
 
-                <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 2 조 (용역의 범위 및 내용)</h2>
-                    <p style={{ marginBottom: '4px' }}>"을"이 수행할 용역의 범위는 다음 각 호와 같다.</p>
+                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 2 조 (용역의 범위 및 내용)</h2>
+                    <p style={{ marginBottom: '5px' }}>"을"이 수행할 용역의 범위는 다음 각 호와 같다.</p>
                     <ol style={{ listStyleType: 'decimal', marginLeft: '20px' }}>
-                        <li style={{ marginBottom: '4px' }}><strong>주요 과업:</strong> {formData.task}</li>
-                        <li style={{ marginBottom: '4px' }}><strong>최종 산출물:</strong>
-                            <ul style={{ listStyleType: 'disc', marginLeft: '20px', marginTop: '4px' }}>
-                                {formData.deliverables.length > 0 ? formData.deliverables.map((d, i) => <li key={i}>{d}</li>) : <li>(산출물 없음)</li>}
+                        <li style={{ marginBottom: '5px' }}><strong>주요 과업:</strong> {formData.task}</li>
+                        <li style={{ marginBottom: '5px' }}><strong>최종 산출물:</strong>
+                            <ul style={{ listStyleType: 'none', paddingLeft: '0', marginLeft: '20px', marginTop: '5px' }}>
+                                {formData.deliverables.length > 0 ? formData.deliverables.map((d, i) => <li key={i}>- {d}</li>) : <li>- (산출물 없음)</li>}
                             </ul>
                         </li>
-                        <li><strong>기타:</strong> <div style={{ whiteSpace: 'pre-wrap', marginTop: '4px' }}>{clauses.scope || '(내용 없음)'}</div></li>
+                        <li><strong>상세 내용:</strong> <div style={{ whiteSpace: 'pre-wrap', marginTop: '5px', textAlign: 'justify' }}>{clauses.scope || '(내용 없음)'}</div></li>
                     </ol>
                 </section>
 
-                <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 3 조 (계약 기간)</h2>
-                    <p>본 용역의 수행 기간은 <strong>{formData.startDate}</strong>부터 <strong>{formData.endDate}</strong>까지로 한다.</p>
+                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 3 조 (계약 기간)</h2>
+                    <p>본 용역의 수행 기간은 <strong>{getFormattedDate(formData.startDate)}</strong>부터 <strong>{getFormattedDate(formData.endDate)}</strong>까지로 한다.</p>
                 </section>
 
-                <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 4 조 (계약 금액 및 지급 방법)</h2>
+                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 4 조 (계약 금액 및 지급 방법)</h2>
                     <ol style={{ listStyleType: 'decimal', marginLeft: '20px' }}>
-                        <li style={{ marginBottom: '4px' }}><strong>총 계약 금액:</strong> 일금 {numberToKoreanWon(formData.projectValue)} 원정 (₩{formData.projectValue.toLocaleString()}), 부가가치세 별도</li>
+                        <li style={{ marginBottom: '5px' }}><strong>총 계약 금액:</strong> 일금 {numberToKoreanWon(formData.projectValue)} 원정 (₩{formData.projectValue.toLocaleString()}), 부가가치세 별도</li>
                         <li><strong>지급 방법:</strong>
-                             <div style={{ whiteSpace: 'pre-wrap', marginTop: '4px', padding: '8px', backgroundColor: '#f9fafb' }}>{clauses.payment || CLAUSE_PLACEHOLDERS.payment}</div>
+                             <div style={{ whiteSpace: 'pre-wrap', marginTop: '10px', textAlign: 'justify' }}>{clauses.payment || CLAUSE_PLACEHOLDERS.payment}</div>
                         </li>
                     </ol>
                 </section>
 
-                <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 5 조 (수정 및 검수)</h2>
+                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 5 조 (수정 및 검수)</h2>
                     <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.revisions || CLAUSE_PLACEHOLDERS.revisions}</div>
                 </section>
 
-                <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 6 조 (저작권 귀속)</h2>
+                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 6 조 (지식재산권의 귀속)</h2>
                     <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.ip || CLAUSE_PLACEHOLDERS.ip}</div>
                 </section>
                 
-                 <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 7 조 (피드백 및 소통)</h2>
+                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 7 조 (상호 협조 및 소통)</h2>
                     <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.feedback || CLAUSE_PLACEHOLDERS.feedback}</div>
                 </section>
 
-                 <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 8 조 (계약의 해지)</h2>
+                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 8 조 (계약의 해지)</h2>
                     <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.termination || CLAUSE_PLACEHOLDERS.termination}</div>
                 </section>
 
-                 <section>
-                    <h2 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '8px' }}>제 9 조 (비밀유지 의무 및 기타)</h2>
+                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 9 조 (비밀유지)</h2>
                     <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.review || CLAUSE_PLACEHOLDERS.review}</div>
+                </section>
+
+                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 10 조 (분쟁의 해결)</h2>
+                    <div style={{ textAlign: 'justify' }}>본 계약과 관련하여 분쟁이 발생한 경우 당사자 간의 합의에 의해 해결함을 원칙으로 하며, 합의가 이루어지지 않을 경우 "갑"의 소재지를 관할하는 법원을 전속 관할 법원으로 한다.</div>
+                </section>
+
+                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 11 조 (기타)</h2>
+                    <div style={{ textAlign: 'justify' }}>본 계약에 명시되지 않은 사항은 상관례 및 관계 법령에 따른다.</div>
                 </section>
             </div>
 
-            <div style={{ marginTop: '60px', paddingTop: '30px', borderTop: '1px solid black' }}>
-                <p style={{ textAlign: 'center', marginBottom: '40px', fontSize: '14pt' }}>{getFormattedDate(formData.contractDate)}</p>
+            <div style={{ marginTop: '60px', paddingTop: '40px', borderTop: '2px solid black', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                <p style={{ textAlign: 'center', marginBottom: '50px', fontSize: '14pt', fontWeight: 'bold' }}>{getFormattedDate(formData.contractDate)}</p>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '40px' }}>
+                    {/* Client Block */}
                     <div style={{ flex: 1 }}>
-                        <h3 style={{ fontWeight: 'bold', fontSize: '14pt', marginBottom: '20px', borderBottom: '1px solid #9ca3af', paddingBottom: '8px' }}>갑 (의뢰인)</h3>
-                        <div style={{ marginBottom: '30px' }}>
-                            <span style={{ fontSize: '10pt', color: '#6b7280' }}>성함/상호</span>
-                            <p style={{ fontSize: '16pt', fontFamily: 'serif', marginTop: '4px' }}>{formData.clientName}</p>
+                        <h3 style={{ fontSize: '12pt', fontWeight: 'bold', marginBottom: '20px' }}>의뢰인 (갑)</h3>
+                        
+                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '10px' }}>
+                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>성명/상호</span>
+                            <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.clientName}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', borderBottom: '1px solid black', paddingBottom: '4px' }}>
-                            <span style={{ fontSize: '10pt', color: '#6b7280' }}>(서명 또는 인)</span>
-                            <span style={{ height: '30px' }}></span>
+
+                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '10px' }}>
+                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>연락처</span>
+                             {formData.clientContact ? (
+                                <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.clientContact}</span>
+                             ) : (
+                                <span style={{ borderBottom: '1px solid #dddddd', flex: 1, height: '18px' }}></span>
+                             )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '20px' }}>
+                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>주 소</span>
+                            {formData.clientAddress ? (
+                                <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.clientAddress}</span>
+                             ) : (
+                                <span style={{ borderBottom: '1px solid #dddddd', flex: 1, height: '18px' }}></span>
+                             )}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '20px', color: '#999999' }}>
+                             <span style={{ fontSize: '10pt' }}>(서명/인)</span>
                         </div>
                     </div>
+
+                    {/* Freelancer Block */}
                     <div style={{ flex: 1 }}>
-                        <h3 style={{ fontWeight: 'bold', fontSize: '14pt', marginBottom: '20px', borderBottom: '1px solid #9ca3af', paddingBottom: '8px' }}>을 (작업자)</h3>
-                        <div style={{ marginBottom: '30px' }}>
-                            <span style={{ fontSize: '10pt', color: '#6b7280' }}>성함/상호</span>
-                            <p style={{ fontSize: '16pt', fontFamily: 'serif', marginTop: '4px' }}>{formData.freelancerName}</p>
+                        <h3 style={{ fontSize: '12pt', fontWeight: 'bold', marginBottom: '20px' }}>작업자 (을)</h3>
+                        
+                         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '10px' }}>
+                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>성명/상호</span>
+                            <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.freelancerName}</span>
                         </div>
-                         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', borderBottom: '1px solid black', paddingBottom: '4px' }}>
-                            <span style={{ fontSize: '10pt', color: '#6b7280' }}>(서명 또는 인)</span>
-                            <span style={{ height: '30px' }}></span>
+
+                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '10px' }}>
+                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>연락처</span>
+                             {formData.freelancerContact ? (
+                                <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.freelancerContact}</span>
+                             ) : (
+                                <span style={{ borderBottom: '1px solid #dddddd', flex: 1, height: '18px' }}></span>
+                             )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '20px' }}>
+                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>주 소</span>
+                            {formData.freelancerAddress ? (
+                                <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.freelancerAddress}</span>
+                             ) : (
+                                <span style={{ borderBottom: '1px solid #dddddd', flex: 1, height: '18px' }}></span>
+                             )}
+                        </div>
+                         
+                         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '20px', color: '#999999' }}>
+                             <span style={{ fontSize: '10pt' }}>(서명/인)</span>
                         </div>
                     </div>
                 </div>
             </div>
             
-             <div style={{ marginTop: '40px', textAlign: 'center', fontSize: '9pt', color: '#9ca3af' }}>
+             <div style={{ marginTop: '50px', textAlign: 'center', fontSize: '9pt', color: '#9ca3af' }}>
                 본 계약서는 FreeZone 서비스를 통해 작성되었습니다.
             </div>
       </div>
