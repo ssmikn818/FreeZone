@@ -1,11 +1,15 @@
 
 import React, { useState, useEffect, useMemo, useCallback, RefObject, useRef } from 'react';
 import { Tab } from '../types';
-import { DocumentTextIcon, ShareIcon, SignatureIcon, ShieldCheckIcon, DocumentDuplicateIcon, ScaleIcon, PlusIcon, LightBulbIcon, CheckCircleIcon, ScopeIcon, RevisionsIcon, DollarIcon, IPRightsIcon, TerminationIcon, FeedbackIcon, ClipboardIcon, PrinterIcon, XMarkIcon, QuestionMarkCircleIcon, PencilSquareIcon, ArrowLeftIcon, PaletteIcon, CodeIcon, BriefcaseIcon, ClockIcon, BellIcon, CheckBadgeIcon, AnalysisValidIcon, AnalysisInvalidIcon, ArrowDownTrayIcon, ChatBubbleOvalLeftEllipsisIcon } from './Icons';
+import PricingFeatures from './PricingFeatures';
+import ProductFeatures from './ProductFeatures';
+import FaqPage from './FaqPage';
+import { CheckCircleIcon, ArrowLeftIcon, PrinterIcon, ClipboardIcon, ArrowDownTrayIcon, ChatBubbleOvalLeftEllipsisIcon, AnalysisValidIcon, AnalysisInvalidIcon, XMarkIcon, BellIcon, ShieldCheckIcon, ExclamationTriangleIcon, XCircleIcon } from './Icons';
 
 interface LandingPageProps {
   contractRef: RefObject<HTMLDivElement>;
   onGoToContract: () => void;
+  onSelectTab?: (tab: Tab) => void;
 }
 
 const INDUSTRY_OPTIONS = ['디자인', 'IT/개발', '영상/미디어', '글/콘텐츠', '마케팅', '번역', '컨설팅/교육'];
@@ -66,7 +70,6 @@ const DELIVERABLE_OPTIONS: Record<string, string[]> = {
     '외국어/전문 과외': ['수업 계획서', '월별 학습 경과 보고서', '자체 제작 학습 자료'],
 };
 
-
 const CLAUSE_PLACEHOLDERS: Record<string, string> = {
     scope: '예: 제공된 기획서 및 디자인을 기반으로 반응형 웹사이트의 프론트엔드 개발을 수행합니다. 관리자 페이지는 포함되지 않습니다.',
     revisions: '예: 최초 시안 확인 후 1회, 최종 시안 확정 후 1회로 총 2회 수정을 기본으로 제공합니다.',
@@ -78,13 +81,13 @@ const CLAUSE_PLACEHOLDERS: Record<string, string> = {
 };
 
 const CLAUSE_TIPS: Record<string, string> = {
-    scope: "작업 범위를 명확히 할수록 '이것도 해주세요'라는 추가 요청을 방지할 수 있어요.",
-    revisions: "수정 횟수와 추가 비용을 명시하는 것은 끝없는 수정을 막는 가장 효과적인 방법입니다.",
-    payment: "대금 지급 시점과 방식을 명확히 해야 안정적인 수입을 계획하고 미수금 위험을 줄일 수 있습니다.",
-    ip: "저작권 귀속과 포트폴리오 사용 권한을 명시해야 나의 소중한 작업물을 자산으로 활용하고 분쟁을 막을 수 있습니다.",
-    termination: "계약이 중도에 해지될 경우를 대비해 책임 소재와 비용 정산 기준을 정해두어야 손해를 보지 않습니다.",
-    feedback: "명확한 피드백 기한과 소통 채널 지정은 프로젝트 지연을 막고, 모든 커뮤니케이션 기록을 남겨 분쟁을 예방합니다.",
-    review: "비밀유지 의무, 하자보수 기간 등 프로젝트의 특수성을 반영한 내용을 추가하여 예상치 못한 분쟁을 예방하세요.",
+    scope: '어떤 작업을 수행해야 하는지 구체적으로 작성해주세요. 모호한 표현은 피하는 것이 좋습니다.',
+    revisions: '무제한 수정은 프로젝트 종료를 어렵게 합니다. 횟수와 범위를 명확히 제한하세요.',
+    payment: '금액뿐만 아니라 "언제" 지급하는지가 중요합니다. 선금/잔금 비율을 정하는 것을 추천합니다.',
+    ip: '작업물의 주인은 누구일까요? 저작권 양도 여부와 포트폴리오 사용 권한을 체크하세요.',
+    termination: '혹시 모를 상황에 대비해 계약 해지 조건과 환불 규정을 미리 정해두세요.',
+    feedback: '피드백이 늦어지면 마감도 늦어집니다. 피드백 제공 기한을 정해두세요.',
+    review: '프로젝트 비밀 유지나 상호 비방 금지 등 추가적으로 필요한 약속을 적어주세요.',
 };
 
 const numberToKoreanWon = (num: number): string => {
@@ -135,148 +138,315 @@ const getFormattedDate = (dateStr: string) => {
     return `${year}년 ${month}월 ${day}일`;
 };
 
-// ----------------------
-// 조항 추천 로직 확장
-// ----------------------
+interface ClauseSuggestion {
+    title: string;
+    suggestion: string;
+    problem: string;
+    solution: string;
+}
+
 const getClauseGuidance = (projectValue: number, industry: string, task: string) => {
-    // 1. 공통 조항 (모든 업종 공통)
     const commonClauses = {
         termination: [
             {
                 title: '책임 분배형: 귀책사유 기준',
                 suggestion: '의뢰인의 단순 변심으로 계약 해지 시, 선금은 환불되지 않습니다.\n작업자의 귀책 사유로 계약 이행이 불가능할 경우, 선금 전액을 환불하고 총 계약금액의 20%를 손해배상금으로 지급합니다.',
-                rationale: `🤔 문제점: 일방적인 계약 파기는 손해를 야기합니다.\n💡 해결책: 귀책사유에 따른 책임 범위를 명확히 하여 부당한 파기를 방지합니다.`,
+                problem: '일방적인 계약 파기는 손해를 야기합니다.',
+                solution: '귀책사유에 따른 책임 범위를 명확히 하여 부당한 파기를 방지합니다.',
             },
              {
                 title: '진행률 정산형: 단계별 비용 정산',
                 suggestion: '계약 해지 시점까지 진행된 작업량에 대해 상호 합의하여 정산합니다. (예: 착수 단계 30%, 중간 단계 70%) 단, 의뢰인 귀책 시 위약금 10%가 가산됩니다.',
-                rationale: `🤔 문제점: 중도 해지 시 기여도 산정이 어렵습니다.\n💡 해결책: 단계별 가치를 정해 정산 기준을 마련합니다.`
+                problem: '중도 해지 시 기여도 산정이 어렵습니다.',
+                solution: '단계별 가치를 정해 정산 기준을 마련합니다.'
             },
         ],
         feedback: [
             {
                 title: '소통 규칙형: 피드백 채널/기한 지정',
                 suggestion: '각 단계별 결과물 공유 후 3 영업일 이내에 피드백을 제공합니다. 피드백은 지정된 채널(예: 이메일, 슬랙)로 일원화하여 전달하며, 구두 요청은 효력이 없습니다.',
-                rationale: `🤔 문제점: 피드백 지연과 소통 분산은 일정 지연의 주범입니다.\n💡 해결책: 기한과 채널을 고정하여 기록을 남기고 효율을 높입니다.`
+                problem: '피드백 지연과 소통 분산은 일정 지연의 주범입니다.',
+                solution: '기한과 채널을 고정하여 기록을 남기고 효율을 높입니다.'
+            },
+            {
+                title: '책임 제한형: 피드백 미회신 시',
+                suggestion: '작업자가 피드백을 요청하였으나 5 영업일 이상 회신이 없을 경우, 해당 단계는 승인된 것으로 간주하고 다음 단계 작업을 진행합니다.',
+                problem: '무응답으로 인해 프로젝트가 무기한 지연될 수 있습니다.',
+                solution: '자동 승인 조항을 통해 프로젝트 진행 속도를 확보합니다.'
             },
         ],
         review: [
             {
                 title: '기본 보안형: 비밀유지 의무',
                 suggestion: '양 당사자는 본 계약과 관련하여 알게 된 상대방의 영업상, 기술상 비밀을 제3자에게 누설해서는 안 되며, 이 의무는 계약 종료 후 3년간 유효합니다.',
-                rationale: `🤔 문제점: 민감 정보 유출은 사업적 피해를 줍니다.\n💡 해결책: 상호 신뢰와 자산 보호를 위한 필수 장치입니다.`,
+                problem: '민감 정보 유출은 사업적 피해를 줍니다.',
+                solution: '상호 신뢰와 자산 보호를 위한 필수 장치입니다.',
             },
+            {
+                title: '상호 존중형: 비방 금지',
+                suggestion: '양 당사자는 계약 기간 및 종료 후에도 온/오프라인 상에서 상대방의 명예를 훼손하는 일체의 비방 행위를 하여서는 안 됩니다.',
+                problem: '감정적 분쟁이 평판 저하로 이어질 수 있습니다.',
+                solution: '최소한의 상호 존중 의무를 명시하여 평판을 보호합니다.'
+            }
         ]
     };
 
-    // 2. 대금 지급 방식 (금액대별 추천)
     const paymentClauses = {
         standard: {
             title: '기본 분할형: 5:5 선금/잔금',
             suggestion: `총 계약금액: ${projectValue.toLocaleString()}원 (VAT 별도)\n- 선금(50%): 계약 체결 후 3일 이내 (${(projectValue * 0.5).toLocaleString()}원)\n- 잔금(50%): 최종 산출물 검수 완료 후 3일 이내 (${(projectValue * 0.5).toLocaleString()}원)`,
-            rationale: `가장 표준적인 방식으로, 초기 착수금과 최종 완료금을 균형 있게 배분합니다.`,
+            problem: '한 번에 큰 금액을 주고받는 것은 양측 모두에게 부담입니다.',
+            solution: '초기 착수금과 최종 완료금을 균형 있게 배분하여 리스크를 줄입니다.',
         },
         split343: {
             title: '안전 분할형: 30/40/30 분할',
             suggestion: `총 계약금액: ${projectValue.toLocaleString()}원 (VAT 별도)\n- 착수금(30%): 계약 체결 시\n- 중도금(40%): 중간 산출물 확인 시\n- 잔금(30%): 최종 완료 시`,
-            rationale: `프로젝트 기간이 길거나 금액이 클 때, 현금 흐름을 안정화하는 방식입니다.`,
+            problem: '기간이 긴 프로젝트는 현금 흐름이 막힐 수 있습니다.',
+            solution: '중도금을 두어 안정적인 운영 자금을 확보합니다.',
         }
     };
 
-    // 3. 업종별 특화 로직 (Revisions, IP 등)
-    let industrySpecific = {};
+    let industrySpecific: Record<string, ClauseSuggestion[]> = {};
 
     switch (industry) {
         case '디자인':
             industrySpecific = {
                 revisions: [
-                     { title: '횟수 지정형: 총 2회', suggestion: '최초 시안 확인 후 1회, 최종 시안 확정 후 1회로 총 2회의 수정을 무료로 제공합니다. 이를 초과하는 수정이나 컨셉 변경은 별도 비용이 발생합니다.', rationale: '디자인 작업의 특성상 무제한 수정은 불가능하므로 명확한 횟수 제한이 필요합니다.' },
-                     { title: '단계별 제한형', suggestion: '스케치 단계 2회, 채색 단계 1회 수정 가능하며, 이전 단계로 돌아가는 수정(회귀 수정)은 불가능합니다.', rationale: '공정이 진행된 후 앞단계를 수정하는 비효율을 막습니다.' }
+                     { 
+                         title: '횟수 지정형: 총 2회', 
+                         suggestion: '최초 시안 확인 후 1회, 최종 시안 확정 후 1회로 총 2회의 수정을 무료로 제공합니다. 이를 초과하는 수정이나 컨셉 변경은 별도 비용이 발생합니다.', 
+                         problem: '끝없는 수정 요구로 프로젝트가 끝나지 않습니다.',
+                         solution: '명확한 횟수 제한으로 작업 범위를 확정합니다.' 
+                     },
+                     { 
+                         title: '단계별 제한형', 
+                         suggestion: '스케치 단계 2회, 채색 단계 1회 수정 가능하며, 이전 단계로 돌아가는 수정(회귀 수정)은 불가능합니다.', 
+                         problem: '공정이 많이 진행된 후 처음부터 다시 하자는 요구가 발생합니다.',
+                         solution: '단계별 확정(Sign-off) 절차를 통해 역진행을 방지합니다.' 
+                     }
                 ],
                 ip: [
-                    { title: '포트폴리오 사용형', suggestion: '최종 결과물의 저작권은 의뢰인에게 귀속되나, 작업자는 이를 포트폴리오 용도로 사용할 수 있습니다.', rationale: '저작권은 넘기되, 작가의 경력 증빙 권리를 확보합니다.' },
-                    { title: '2차 저작권 별도', suggestion: '최종 결과물의 사용권은 의뢰인에게 있으나, 원본 파일의 수정 및 2차 저작물 작성권은 작업자에게 있습니다. (필요 시 별도 구매)', rationale: '원본 변형을 막고 추가 수익을 기대할 수 있습니다.' }
+                    { 
+                        title: '포트폴리오 사용형', 
+                        suggestion: '최종 결과물의 저작권은 의뢰인에게 귀속되나, 작업자는 이를 포트폴리오 용도로 사용할 수 있습니다.', 
+                        problem: '작업물을 포트폴리오로 쓸 수 없어 경력 증빙이 어렵습니다.',
+                        solution: '저작권은 넘기되, 작가의 경력 홍보 권리를 확보합니다.' 
+                    },
+                    { 
+                        title: '2차 저작권 별도', 
+                        suggestion: '최종 결과물의 사용권은 의뢰인에게 있으나, 원본 파일의 수정 및 2차 저작물 작성권은 작업자에게 있습니다. (필요 시 별도 구매)', 
+                        problem: '원본이 무분별하게 변형되어 원작자의 의도가 훼손될 수 있습니다.',
+                        solution: '원본 변형을 막고 추가 수익 기회를 남겨둡니다.' 
+                    }
                 ]
             };
             break;
         case 'IT/개발':
             industrySpecific = {
                  revisions: [
-                    { title: '하자보수 기간형', suggestion: '최종 산출물 인도 후 1개월간 발견된 버그 및 오류에 대해 무상 유지보수를 제공합니다. 단, 새로운 기능 추가나 기획 변경은 포함되지 않습니다.', rationale: '개발은 완료 후 버그 수정이 필수적이므로 기간을 정해 책임을 다합니다.' },
-                    { title: '범위 엄수형', suggestion: '기획서(요구사항 정의서)에 명시된 기능 외의 수정/추가 요청은 별도의 추가 계약(Change Request)을 통해 진행합니다.', rationale: '개발 범위 확장을(Scope Creep) 막기 위해 문서 기반 기준을 세웁니다.' }
+                    { 
+                        title: '하자보수 기간형', 
+                        suggestion: '최종 산출물 인도 후 1개월간 발견된 버그 및 오류에 대해 무상 유지보수를 제공합니다. 단, 새로운 기능 추가나 기획 변경은 포함되지 않습니다.', 
+                        problem: '완료 후에도 기능 추가 요청이 버그 수정으로 위장될 수 있습니다.',
+                        solution: '오류 수정과 기능 추가를 명확히 구분합니다.' 
+                    },
+                    { 
+                        title: '범위 엄수형 (CR)', 
+                        suggestion: '기획서(요구사항 정의서)에 명시된 기능 외의 수정/추가 요청은 별도의 추가 계약(Change Request)을 통해 진행합니다.', 
+                        problem: '개발 도중 요구사항이 계속 늘어나는 스코프 크립(Scope Creep) 현상.',
+                        solution: '문서 기반 기준을 세워 추가 요청에 대한 정당한 대가를 요구합니다.' 
+                    }
                 ],
                 ip: [
-                    { title: '개발 산출물 양도', suggestion: '잔금 지급과 동시에 소스코드 및 산출물 일체의 권리는 의뢰인에게 귀속됩니다.', rationale: '일반적인 SI/외주 개발의 표준입니다.' },
-                    { title: '솔루션 라이선스', suggestion: '결과물의 사용권은 의뢰인에게 영구 부여되나, 사용된 핵심 모듈 및 라이브러리의 지적재산권은 작업자에게 유보됩니다.', rationale: '자체 솔루션을 활용해 개발하는 경우 핵심 기술을 보호합니다.' }
+                    { 
+                        title: '개발 산출물 양도', 
+                        suggestion: '잔금 지급과 동시에 소스코드 및 산출물 일체의 권리는 의뢰인에게 귀속됩니다.', 
+                        problem: '의뢰인은 개발 결과물에 대한 완전한 소유권을 원합니다.',
+                        solution: '일반적인 SI/외주 개발의 표준인 턴키(Turn-key) 방식을 적용합니다.' 
+                    },
+                    { 
+                        title: '솔루션 라이선스', 
+                        suggestion: '결과물의 사용권은 의뢰인에게 영구 부여되나, 사용된 핵심 모듈 및 라이브러리의 지적재산권은 작업자에게 유보됩니다.', 
+                        problem: '개발자의 핵심 기술(엔진, 프레임워크)까지 넘어갈 위험이 있습니다.',
+                        solution: '결과물 사용권만 부여하여 핵심 기술 자산을 보호합니다.' 
+                    }
                 ]
             };
             break;
         case '영상/미디어':
              industrySpecific = {
                 revisions: [
-                    { title: '컷 편집/종편 구분형', suggestion: '가편집본(컷편집) 단계에서 1회, 종편(자막/효과) 단계에서 1회 수정을 진행합니다. 종편 단계에서 컷 편집 수정 시 추가 비용이 발생합니다.', rationale: '영상 작업은 렌더링 후 수정이 매우 번거로우므로 단계별 확정이 중요합니다.' },
-                    { title: '시간 기반 수정', suggestion: '전체 길이의 10% 이내 수정은 2회 무료이며, 전체 재편집이나 30% 이상의 수정은 신규 견적으로 처리합니다.', rationale: '수정 범위를 정량화하여 무리한 요구를 방지합니다.' }
+                    { 
+                        title: '컷 편집/종편 구분형', 
+                        suggestion: '가편집본(컷편집) 단계에서 1회, 종편(자막/효과) 단계에서 1회 수정을 진행합니다. 종편 단계에서 컷 편집 수정 시 추가 비용이 발생합니다.', 
+                        problem: '렌더링 후 컷 편집 수정은 작업량이 큽니다.',
+                        solution: '공정 단계별로 수정 가능한 범위를 제한합니다.' 
+                    },
+                    { 
+                        title: '비율 기반 수정', 
+                        suggestion: '전체 길이의 10% 이내 수정은 2회 무료이며, 전체 재편집이나 30% 이상의 수정은 신규 견적으로 처리합니다.', 
+                        problem: '모호한 "약간 수정" 요청이 사실상 재작업인 경우가 많습니다.',
+                        solution: '수정 범위를 수치화하여 과도한 요청을 방지합니다.' 
+                    }
                 ],
                 ip: [
-                    { title: '최종본 귀속형', suggestion: '최종 렌더링된 영상 파일의 저작권은 의뢰인에게 귀속됩니다. 프로젝트 원본(프로젝트 파일, 소스 등)은 제공되지 않습니다.', rationale: '일반적으로 원본 프로젝트 파일은 작업자의 노하우가 담겨있어 제공하지 않습니다.' },
-                    { title: '초상권/사용처 제한', suggestion: '제작된 영상은 합의된 매체(예: 유튜브)에서만 사용 가능하며, TV광고 등 타 매체 확장 시 별도 협의가 필요합니다.', rationale: '모델/성우의 초상권 및 사용료 이슈를 사전에 방지합니다.' }
+                    { 
+                        title: '최종본 귀속형', 
+                        suggestion: '최종 렌더링된 영상 파일의 저작권은 의뢰인에게 귀속됩니다. 프로젝트 원본(프로젝트 파일, 소스 등)은 제공되지 않습니다.', 
+                        problem: '원본 프로젝트 파일(소스) 요구 시 노하우 유출 우려가 있습니다.',
+                        solution: '결과물(영상)과 원본 소스를 분리하여 계약합니다.' 
+                    },
+                    { 
+                        title: '초상권/사용처 제한', 
+                        suggestion: '제작된 영상은 합의된 매체(예: 유튜브)에서만 사용 가능하며, TV광고 등 타 매체 확장 시 별도 협의가 필요합니다.', 
+                        problem: '웹용으로 제작된 영상이 TV 광고 등에 무단 사용될 수 있습니다.',
+                        solution: '사용 매체를 한정하여 모델료/저작권 이슈를 예방합니다.' 
+                    }
                 ]
             };
             break;
         case '글/콘텐츠':
              industrySpecific = {
                 revisions: [
-                    { title: '윤문/교정 중심형', suggestion: '초안 전달 후 내용의 사실관계 오류 및 윤문 수정 2회를 제공합니다. 전체적인 방향성이나 톤앤매너 변경은 재작업 비용이 청구됩니다.', rationale: '글쓰기는 주관적 영역이므로, 내용 오류 수정과 전면 재작업을 구분해야 합니다.' },
-                    { title: '분량 기반형', suggestion: '전체 원고의 20% 분량 내 수정 2회를 제공합니다. 기획 방향 변경으로 인한 전면 수정은 불가합니다.', rationale: '수정 범위를 명확히 합니다.' }
+                    { 
+                        title: '윤문/교정 중심형', 
+                        suggestion: '초안 전달 후 내용의 사실관계 오류 및 윤문 수정 2회를 제공합니다. 전체적인 방향성이나 톤앤매너 변경은 재작업 비용이 청구됩니다.', 
+                        problem: '단순 수정 요청이 글 전체를 다시 쓰는 재작업이 될 수 있습니다.',
+                        solution: '오류 수정과 전면 재작업(Rewrite)을 명확히 구분합니다.' 
+                    },
+                    { 
+                        title: '분량 기반형', 
+                        suggestion: '전체 원고의 20% 분량 내 수정 2회를 제공합니다. 기획 방향 변경으로 인한 전면 수정은 불가합니다.', 
+                        problem: '수정의 범위가 모호하여 분쟁이 발생합니다.',
+                        solution: '수정 가능한 분량 비율을 정해 둡니다.' 
+                    }
                 ],
                 ip: [
-                    { title: '고스트라이팅(양도)', suggestion: '모든 저작권은 의뢰인에게 귀속되며, 작업자는 저작인격권(성명표시권)을 행사하지 않습니다.', rationale: '마케팅 원고나 대필의 경우 저작권을 완전히 넘기는 것이 일반적입니다.' },
-                    { title: '바이라인 명시형', suggestion: '저작재산권은 의뢰인에게 있으나, 발행 시 작업자의 이름(Byline)을 명시해야 합니다.', rationale: '기고문이나 칼럼 등 작가의 크레딧이 중요한 경우입니다.' }
+                    { 
+                        title: '고스트라이팅(양도)', 
+                        suggestion: '모든 저작권은 의뢰인에게 귀속되며, 작업자는 저작인격권(성명표시권)을 행사하지 않습니다.', 
+                        problem: '마케팅 원고 등에서 작가 이름 노출을 꺼리는 경우가 있습니다.',
+                        solution: '저작권을 완전히 양도하여 의뢰인의 자유로운 활용을 돕습니다.' 
+                    },
+                    { 
+                        title: '바이라인 명시형', 
+                        suggestion: '저작재산권은 의뢰인에게 있으나, 발행 시 작업자의 이름(Byline)을 명시해야 합니다.', 
+                        problem: '기획 기사나 칼럼에서 작가의 크레딧이 누락될 수 있습니다.',
+                        solution: '성명표시권을 명시하여 작가로서의 권리를 지킵니다.' 
+                    }
                 ]
             };
             break;
          case '마케팅':
              industrySpecific = {
                 revisions: [
-                    { title: '캠페인 최적화형', suggestion: '광고 세팅 후 2주간의 초기 최적화(소재 교체, 타겟팅 조정)를 지원합니다. 이후의 관리는 별도 운영 계약을 따릅니다.', rationale: '퍼포먼스 마케팅은 수정보다는 지속적인 최적화 과정임을 명시합니다.' },
-                    { title: '사전 컨펌 필수', suggestion: '모든 콘텐츠 발행 전 의뢰인의 최종 승인을 득해야 하며, 승인된 콘텐츠 발행 후 발생한 문제에 대해 작업자는 책임지지 않습니다.', rationale: '마케팅 사고 방지를 위해 책임 소재를 명확히 합니다.' }
+                    { 
+                        title: '캠페인 최적화형', 
+                        suggestion: '광고 세팅 후 2주간의 초기 최적화(소재 교체, 타겟팅 조정)를 지원합니다. 이후의 관리는 별도 운영 계약을 따릅니다.', 
+                        problem: '마케팅은 일회성 수정보다 지속적인 관리가 필요합니다.',
+                        solution: '초기 세팅과 지속적 운영 관리(Retainer)를 구분합니다.' 
+                    },
+                    { 
+                        title: '사전 컨펌 필수', 
+                        suggestion: '모든 콘텐츠 발행 전 의뢰인의 최종 승인을 득해야 하며, 승인된 콘텐츠 발행 후 발생한 문제에 대해 작업자는 책임지지 않습니다.', 
+                        problem: '승인된 광고 문구로 인한 법적 문제가 발생할 수 있습니다.',
+                        solution: '최종 승인 책임자를 의뢰인으로 지정하여 면책 조항을 둡니다.' 
+                    }
                 ],
                 ip: [
-                    { title: '데이터 소유권', suggestion: '광고 집행을 통해 축적된 데이터 및 계정 소유권은 의뢰인에게 귀속됩니다.', rationale: '계약 종료 후 계정 소유권 분쟁을 예방합니다.' },
-                    { title: '소재 사용 제한', suggestion: '제작된 마케팅 소재는 계약 기간 동안 해당 캠페인에만 사용 가능하며, 외부 배포나 상업적 재판매는 금지됩니다.', rationale: '계약 종료 후 소재 무단 사용을 막습니다.' }
+                    { 
+                        title: '데이터 소유권', 
+                        suggestion: '광고 집행을 통해 축적된 데이터 및 계정 소유권은 의뢰인에게 귀속됩니다.', 
+                        problem: '계약 종료 후 광고 계정과 데이터를 돌려받지 못하는 경우가 있습니다.',
+                        solution: '계정과 데이터의 소유권을 의뢰인에게 명확히 귀속시킵니다.' 
+                    },
+                    { 
+                        title: '소재 사용 제한', 
+                        suggestion: '제작된 마케팅 소재는 계약 기간 동안 해당 캠페인에만 사용 가능하며, 외부 배포나 상업적 재판매는 금지됩니다.', 
+                        problem: '계약 종료 후에도 제작한 소재를 무단으로 계속 사용할 수 있습니다.',
+                        solution: '소재의 사용 기간과 범위를 계약 기간 내로 한정합니다.' 
+                    }
                 ]
             };
             break;
          case '번역':
              industrySpecific = {
                 revisions: [
-                    { title: '오역 수정 무제한', suggestion: '명백한 오역이나 누락에 대해서는 기간/횟수 제한 없이 무상 수정을 제공합니다. 단, 단순 표현(스타일) 선호에 따른 수정은 1회로 제한합니다.', rationale: '품질에 대한 책임을 다하되, 주관적 취향에 의한 무한 수정을 막습니다.' },
-                    { title: '용어집 기반', suggestion: '사전에 합의된 용어집(Glossary)을 기준으로 작업하며, 용어집 미준수에 대한 수정은 무제한 제공합니다.', rationale: '전문 번역의 품질 기준을 세웁니다.' }
+                    { 
+                        title: '오역 수정 무제한', 
+                        suggestion: '명백한 오역이나 누락에 대해서는 기간/횟수 제한 없이 무상 수정을 제공합니다. 단, 단순 표현(스타일) 선호에 따른 수정은 1회로 제한합니다.', 
+                        problem: '단순 취향 차이로 인한 수정 요청이 반복될 수 있습니다.',
+                        solution: '오역(품질 문제)과 선호(취향 문제)를 구분하여 대응합니다.' 
+                    },
+                    { 
+                        title: '용어집 기반', 
+                        suggestion: '사전에 합의된 용어집(Glossary)을 기준으로 작업하며, 용어집 미준수에 대한 수정은 무제한 제공합니다.', 
+                        problem: '전문 용어 통일이 안 되어 품질 저하가 발생합니다.',
+                        solution: '합의된 용어집을 기준으로 삼아 수정 책임을 명확히 합니다.' 
+                    }
                 ],
                 ip: [
-                    { title: '납품형', suggestion: '번역 결과물의 저작권은 잔금 지급 시 의뢰인에게 양도됩니다.', rationale: '일반적인 비즈니스 번역의 형태입니다.' }
+                    { 
+                        title: '납품형 양도', 
+                        suggestion: '번역 결과물의 저작권은 잔금 지급 시 의뢰인에게 양도됩니다.', 
+                        problem: '번역물의 2차 활용 권한이 불분명할 수 있습니다.',
+                        solution: '잔금 지급을 조건으로 저작권을 깔끔하게 넘깁니다.' 
+                    },
+                    {
+                        title: '2차적 저작물 작성권',
+                        suggestion: '번역물에 대한 저작권은 의뢰인에게 있으나, 이를 바탕으로 한 2차적 저작물 작성권(출판 등)은 별도 합의합니다.',
+                        problem: '단순 번역 의뢰가 출판권까지 포함하는 것으로 오해될 수 있습니다.',
+                        solution: '용역 범위와 출판 권리를 분리합니다.'
+                    }
                 ]
             };
             break;
           case '컨설팅/교육':
              industrySpecific = {
                 revisions: [
-                    { title: '질의응답 포함형', suggestion: '최종 보고서 전달 후 1회의 수정 보완 및 1시간의 Q&A 세션을 제공합니다. 추가 자문은 시간당 비용이 청구됩니다.', rationale: '컨설팅은 결과물 자체보다 이해와 설명 과정이 중요합니다.' },
+                    { 
+                        title: '질의응답 포함형', 
+                        suggestion: '최종 보고서 전달 후 1회의 수정 보완 및 1시간의 Q&A 세션을 제공합니다. 추가 자문은 시간당 비용이 청구됩니다.', 
+                        problem: '보고서 납품 후에도 무제한 자문 요청이 들어올 수 있습니다.',
+                        solution: '후속 지원 범위를 시간 단위나 횟수로 제한합니다.' 
+                    },
+                    {
+                        title: '범위 한정형',
+                        suggestion: '수정은 오탈자 및 사실관계 오류 정정에 한하며, 새로운 분석이나 리서치 추가는 별도 계약으로 진행합니다.',
+                        problem: '단순 수정을 넘어 새로운 리서치를 요구하는 경우가 있습니다.',
+                        solution: '수정의 범위가 모호하여 기존 산출물 내 오류 정정으로 한정합니다.'
+                    }
                 ],
                  ip: [
-                    { title: '자료 사용권', suggestion: '제공된 교육 자료 및 보고서는 의뢰인 내부 목적으로만 사용 가능하며, 외부 배포나 상업적 재판매는 금지됩니다.', rationale: '컨설턴트의 지식 자산을 보호합니다.' }
+                    { 
+                        title: '자료 사용권 (비독점)', 
+                        suggestion: '제공된 교육 자료 및 보고서는 의뢰인 내부 목적으로만 사용 가능하며, 외부 배포나 상업적 재판매는 금지됩니다.', 
+                        problem: '컨설팅 자료가 경쟁사나 외부에 유출될 수 있습니다.',
+                        solution: '사용 범위를 내부용으로 제한하여 지적 자산을 보호합니다.' 
+                    },
+                    {
+                        title: '방법론 소유권',
+                        suggestion: '산출물은 의뢰인에게 귀속되나, 산출물을 만드는 데 사용된 작업자의 고유한 방법론, 프레임워크 등에 대한 권리는 작업자에게 있습니다.',
+                        problem: '컨설턴트의 핵심 노하우(방법론)까지 뺏길 수 있습니다.',
+                        solution: '결과물과 도구(방법론)의 권리를 분리합니다.'
+                    }
                 ]
             };
             break;
         default:
              industrySpecific = {
-                 revisions: [{ title: '기본 수정형', suggestion: '최종 산출물 전달 후 2회 무료 수정을 제공합니다.', rationale: '표준적인 수정 조항입니다.'}],
-                 ip: [{ title: '저작권 양도', suggestion: '잔금 지급 시 저작권은 의뢰인에게 귀속됩니다.', rationale: '표준적인 저작권 조항입니다.'}]
+                 revisions: [
+                     { title: '기본 수정형', suggestion: '최종 산출물 전달 후 2회 무료 수정을 제공합니다.', problem: '수정 횟수 제한이 없으면 프로젝트가 끝나지 않습니다.', solution: '표준적인 2회 수정으로 마무리를 유도합니다.' },
+                     { title: '추가 수정 유료화', suggestion: '기본 2회 수정 후 추가 수정 시 건당 비용이 발생합니다.', problem: '수정 요청이 남발될 수 있습니다.', solution: '추가 업무에 대한 비용을 명시합니다.' }
+                ],
+                 ip: [
+                     { title: '저작권 양도', suggestion: '잔금 지급 시 저작권은 의뢰인에게 귀속됩니다.', problem: '저작권 귀속 시점이 불분명하면 잔금을 못 받을 수 있습니다.', solution: '잔금 지급 완료 시점을 권리 이전 시점으로 못 박습니다.' },
+                     { title: '포트폴리오 사용', suggestion: '저작권은 양도하되, 포트폴리오 사용권은 작업자가 가집니다.', problem: '경력 증빙이 어려울 수 있습니다.', solution: '작업자의 홍보 권리를 확보합니다.' }
+                ]
              };
             break;
     }
 
-    // 데이터 병합 (Payment는 공통으로 처리하되, 필요 시 industrySpecific에 추가 가능)
     return {
         ...commonClauses,
         payment: [paymentClauses.standard, paymentClauses.split343],
@@ -284,20 +454,21 @@ const getClauseGuidance = (projectValue: number, industry: string, task: string)
     };
 };
 
-export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToContract, onSelectTab }) => {
     const [step, setStep] = useState(1);
     const [infoStep, setInfoStep] = useState(0);
     const [clauseStep, setClauseStep] = useState(0);
-    const [showAnalysisModal, setShowAnalysisModal] = useState(false); // New: Modal State
+    const [showAnalysisModal, setShowAnalysisModal] = useState(false);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-    
+    const [isNotified, setIsNotified] = useState(false);
+
     const [formData, setFormData] = useState({
         clientName: '',
-        clientContact: '', // Added contact info
-        clientAddress: '', // Added address info
+        clientContact: '',
+        clientAddress: '',
         freelancerName: '',
-        freelancerContact: '', // Added contact info
-        freelancerAddress: '', // Added address info
+        freelancerContact: '',
+        freelancerAddress: '',
         projectName: '',
         industry: '',
         task: '',
@@ -316,16 +487,53 @@ export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToCon
         feedback: '',
         review: '',
     });
-    const [activeClauseHelp, setActiveClauseHelp] = useState<string | null>(null);
     const [dateError, setDateError] = useState('');
     const clauseTitleRef = useRef<HTMLDivElement>(null);
 
-    // Update: Pass industry to getClauseGuidance
     const clauseGuidance = useMemo(() => getClauseGuidance(formData.projectValue, formData.industry, formData.task), [formData.projectValue, formData.industry, formData.task]);
     
-    // Update: Logic to retrieve suggestions is now simplified as structure is normalized
-    // No need for "guidanceForTask" derived state as getClauseGuidance returns the flat object for the selected inputs
-    
+    // Check validation result
+    const analysisResult = useMemo(() => {
+        const checks = [
+            {
+                id: 'parties',
+                label: '핵심 당사자 명시',
+                desc: '책임 소재가 명확한가요?',
+                isValid: !!(formData.clientName.trim() && formData.freelancerName.trim())
+            },
+            {
+                id: 'scope',
+                label: '구체적인 과업 범위',
+                desc: '추가 과업 방지가 가능한가요?',
+                isValid: !!(formData.task && formData.deliverables.length > 0 && clauses.scope.trim().length > 10)
+            },
+            {
+                id: 'payment',
+                label: '명확한 대금 지급 조건',
+                desc: '미수금 위험이 관리되고 있나요?',
+                isValid: !!(formData.projectValue > 0 && clauses.payment.trim().length > 10)
+            },
+            {
+                id: 'ip',
+                label: '저작권 귀속 명시',
+                desc: '소유권 분쟁 가능성이 없나요?',
+                isValid: !!(clauses.ip.trim().length > 10)
+            },
+            {
+                id: 'standard',
+                label: '업계 표준 준수',
+                desc: '불공정 조항이 포함되지 않았나요?',
+                isValid: true // Template based, assume true
+            }
+        ];
+        
+        const validCount = checks.filter(c => c.isValid).length;
+        const total = checks.length;
+        const isRisk = validCount < total;
+        
+        return { checks, isRisk, validCount, total };
+    }, [formData, clauses]);
+
     const infoFields = useMemo(() => [
         { key: 'definition', title: '프로젝트 정의', description: '가장 중요한 프로젝트 종류를 먼저 선택해주세요.' },
         { key: 'parties', title: '계약 당사자 및 산출물', description: '누가 무엇을 전달해야 하는지 명확히 해요.' },
@@ -333,13 +541,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToCon
     ], []);
 
     const clauseFields = useMemo(() => [
-        { key: 'scope', title: '작업의 범위와 내용', icon: <ScopeIcon /> },
-        { key: 'revisions', title: '수정 횟수 및 범위', icon: <RevisionsIcon /> },
-        { key: 'payment', title: '대금 지급 방식', icon: <DollarIcon /> },
-        { key: 'ip', title: '저작권 귀속 및 활용', icon: <IPRightsIcon /> },
-        { key: 'termination', title: '계약의 중도 해지', icon: <TerminationIcon /> },
-        { key: 'feedback', title: '피드백 및 소통 방식', icon: <FeedbackIcon /> },
-        { key: 'review', title: '기타 특약사항 (비밀유지 등)', icon: <PencilSquareIcon /> }
+        { key: 'scope', title: '작업의 범위와 내용' },
+        { key: 'revisions', title: '수정 횟수 및 범위' },
+        { key: 'payment', title: '대금 지급 방식' },
+        { key: 'ip', title: '저작권 귀속 및 활용' },
+        { key: 'termination', title: '계약의 중도 해지' },
+        { key: 'feedback', title: '피드백 및 소통 방식' },
+        { key: 'review', title: '기타 특약사항 (비밀유지 등)' }
     ], []);
 
     useEffect(() => {
@@ -349,7 +557,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToCon
             const y = clauseTitleRef.current.getBoundingClientRect().top + window.scrollY - headerHeight;
             window.scrollTo({ top: y, behavior: 'smooth' });
         }
-        // Trigger Modal on Step 3
         if (step === 3) {
             setShowAnalysisModal(true);
         }
@@ -415,7 +622,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToCon
         const newDeliverables = DELIVERABLE_OPTIONS[formData.task];
         setFormData(prev => ({ ...prev, deliverables: newDeliverables || [] }));
         
-        // Update: Apply suggestions from the expanded guidance
         const newClauses: any = {};
         Object.keys(clauses).forEach(key => {
             const suggestions = (clauseGuidance as any)[key];
@@ -476,14 +682,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToCon
     const handleApplySuggestion = (clauseKey: string, suggestion: string) => {
         setClauses(prev => ({ ...prev, [clauseKey]: suggestion }));
     };
+
+    const handleNotify = () => {
+        setIsNotified(true);
+        setTimeout(() => setIsNotified(false), 3000);
+        alert("사전 알림이 신청되었습니다! 안전 기능이 출시되면 가장 먼저 알려드릴게요.");
+    };
     
     const generateContractText = useCallback(() => {
         const formattedDate = getFormattedDate(formData.contractDate);
 
         return `
-표준 용역 계약서
+용역 계약서
 
-본 계약은 ${formattedDate}, 의뢰인 "${formData.clientName || '(의뢰인)'}"(이하 "갑")과 작업자 "${formData.freelancerName || '(작업자)'}"(이하 "을") 간에 다음과 같이 체결되었다.
+의뢰인 "${formData.clientName || '(의뢰인)'}"(이하 "갑")과 작업자 "${formData.freelancerName || '(작업자)'}"(이하 "을")은 상호 신뢰를 바탕으로 다음과 같이 용역 계약을 체결한다.
 
 제 1 조 (목적)
 본 계약은 "갑"이 의뢰한 '${formData.projectName || '(프로젝트명)'}'(이하 "본 용역")을 "을"이 수행하고, "갑"이 이에 대한 대가를 지급함에 있어 필요한 제반 사항을 규정함을 목적으로 한다.
@@ -531,13 +743,13 @@ ${formattedDate}
 
 [의뢰인 (갑)]
 성명/상호: ${formData.clientName || '________________'} (서명/인)
-연락처: ${formData.clientContact || '________________'}
-주소: ${formData.clientAddress || '________________'}
+연락처: ${formData.clientContact ? formData.clientContact : ' '}
+주소: ${formData.clientAddress ? formData.clientAddress : ' '}
 
 [작업자 (을)]
 성명/상호: ${formData.freelancerName || '________________'} (서명/인)
-연락처: ${formData.freelancerContact || '________________'}
-주소: ${formData.freelancerAddress || '________________'}
+연락처: ${formData.freelancerContact ? formData.freelancerContact : ' '}
+주소: ${formData.freelancerAddress ? formData.freelancerAddress : ' '}
     `}, [formData, clauses]);
 
     const handleCopy = useCallback(() => {
@@ -550,809 +762,762 @@ ${formattedDate}
     }, [generateContractText]);
 
     const handleDownloadPdf = () => {
-        const element = document.getElementById('contract-print-area');
-
-        if (!element) {
-            alert("⚠️ 오류: 출력할 계약서 영역을 찾을 수 없습니다.");
+        // 1. Safety Check: Ensure the element exists
+        const originalElement = document.getElementById('contract-print-area');
+        if (!originalElement) {
+            alert("⚠️ 오류: 'contract-print-area' ID를 가진 태그를 찾을 수 없습니다. HTML 코드를 확인해주세요.");
             return;
         }
 
-        // 1. Start loading state
         setIsGeneratingPdf(true);
 
-        // 2. Wait for state update, then takeover screen
-        setTimeout(() => {
-            // Save original styles
-            const originalStyle = element.getAttribute('style') || '';
-            const innerDiv = element.firstElementChild as HTMLElement;
-            const originalInnerStyle = innerDiv ? innerDiv.getAttribute('style') || '' : '';
+        // 2. Create Overlay (The "Visible White Screen" Strategy)
+        // This container covers the entire viewport, forcing a white background and blocking user interaction.
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.width = '100vw';
+        wrapper.style.height = '100vh';
+        wrapper.style.zIndex = '99999';
+        wrapper.style.backgroundColor = '#ffffff';
+        wrapper.style.display = 'flex';
+        wrapper.style.justifyContent = 'center';
+        wrapper.style.overflow = 'auto'; // Allow scrolling if content overflows
 
-            // Apply "Screen Takeover" styles with forced visibility and height
-            // This ensures html2canvas sees the full content expanded
-            element.style.cssText = `
-                position: fixed !important;
-                top: 0 !important;
-                left: 50% !important;
-                transform: translateX(-50%) !important;
-                width: 210mm !important;
-                height: auto !important;
-                min-height: 100vh !important;
-                z-index: 99999 !important;
-                background-color: white !important;
-                color: black !important;
-                margin: 0 !important;
-                overflow: visible !important;
-                display: block !important;
-                font-family: 'Noto Sans KR', sans-serif !important;
-            `;
+        
+        // 3. Clone content
+        const clone = originalElement.cloneNode(true) as HTMLElement;
 
-            // Ensure inner div also expands and doesn't scroll
-            if (innerDiv) {
-                innerDiv.style.cssText = `
-                    width: 100% !important;
-                    height: auto !important;
-                    background-color: white !important;
-                    padding: 15mm 20mm 20mm 20mm !important;
-                    box-shadow: none !important;
-                    margin: 0 auto !important;
-                    overflow: visible !important;
-                `;
+        // 4. Force Print Styles on Clone (Strict A4 Simulation)
+        clone.style.width = '210mm'; // Exact A4 width
+        clone.style.minHeight = '297mm'; // A4 Height
+        // Change: Remove vertical padding from clone, let PDF margin handle top/bottom spacing
+        clone.style.padding = '0mm 20mm'; 
+        clone.style.boxSizing = 'border-box'; // Ensure padding is included in width
+        clone.style.backgroundColor = '#ffffff';
+        clone.style.color = '#000000';
+        clone.style.boxShadow = 'none';
+        clone.style.border = 'none';
+        clone.style.margin = '0 auto';
+
+        // Force text color on ALL children recursively to override Dark Mode CSS
+        const allElements = clone.querySelectorAll('*');
+        allElements.forEach((el) => {
+            const e = el as HTMLElement;
+            // PRESERVE GRAY TEXT for signature placeholders
+            if (e.classList.contains('text-gray-300')) {
+                 e.style.color = '#d1d5db !important'; // Force light gray (Tailwind gray-300)
+            } else {
+                 e.style.color = '#000000';
             }
+            
+            e.style.backgroundColor = 'transparent';
+             // Fix borders if they exist
+            if (getComputedStyle(e).borderColor !== 'rgba(0, 0, 0, 0)') {
+                 e.style.borderColor = '#000000';
+            }
+        });
+        
+        // Specific fix for the header border
+         const header = clone.querySelector('h1');
+         if(header) {
+             header.style.borderBottom = '2px solid #000000';
+             header.style.color = '#000000';
+         }
 
+        // Append clone to wrapper, and wrapper to body
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+
+        // 5. Wait for Render (Critical Step)
+        // We allow the browser 500ms to paint the new DOM elements before capturing.
+        setTimeout(() => {
             const safeProjectName = formData.projectName.trim().replace(/[^a-zA-Z0-9가-힣\s]/g, '') || '프로젝트';
-            const filename = `${safeProjectName}_표준계약서.pdf`;
+            const filename = `${safeProjectName}_용역계약서.pdf`;
 
             const opt = {
-                margin: [10, 0, 10, 0], // Top, Left, Bottom, Right
+                margin: [15, 0, 15, 0], // Top, Left, Bottom, Right (mm) - Adds whitespace at page breaks
                 filename: filename,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
                     logging: false, 
-                    useCORS: true, 
-                    scrollY: 0, // Critical: capture from the top
-                    windowWidth: document.documentElement.offsetWidth, // Ensure responsive width is correct
-                    height: element.scrollHeight, // Force full height capture
-                    windowHeight: element.scrollHeight // Force full height capture
+                    useCORS: true,
+                    scrollX: 0, // CRITICAL: Reset scroll offset to capture from top-left
+                    scrollY: 0, // CRITICAL: Reset scroll offset to capture from top-left
+                    windowWidth: document.body.scrollWidth, // Ensure capture context is wide enough
+                    backgroundColor: '#ffffff'
                 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             // @ts-ignore
-            if (window.html2pdf) {
-                // @ts-ignore
-                window.html2pdf().set(opt).from(element).save()
-                    .then(() => {
-                        // Success
-                    })
-                    .catch((err: any) => {
-                        console.error(err);
-                        alert("PDF 생성 중 오류가 발생했습니다.");
-                    })
-                    .finally(() => {
-                        // Restore styles
-                        element.setAttribute('style', originalStyle);
-                        if (innerDiv) {
-                            innerDiv.setAttribute('style', originalInnerStyle);
-                        }
-                        setIsGeneratingPdf(false);
-                    });
-            } else {
-                alert("PDF 생성 라이브러리를 로드하는 중입니다. 잠시 후 다시 시도해주세요.");
-                // Restore styles
-                element.setAttribute('style', originalStyle);
-                if (innerDiv) {
-                    innerDiv.setAttribute('style', originalInnerStyle);
+            html2pdf().set(opt).from(clone).save()
+            .then(() => {
+                // Success: Remove wrapper
+                document.body.removeChild(wrapper);
+                setIsGeneratingPdf(false);
+            })
+            .catch((err: any) => {
+                console.error("PDF Generation Error:", err);
+                alert('PDF 생성 중 오류가 발생했습니다: ' + err.message);
+                // Error: Remove wrapper
+                if (document.body.contains(wrapper)) {
+                    document.body.removeChild(wrapper);
                 }
                 setIsGeneratingPdf(false);
-            }
-        }, 100);
+            });
+        }, 500); // 0.5s delay
     };
 
-    const handleCopyKakao = () => {
-        const message = `안녕하세요, 요청하신 계약서 초안 송부드립니다.
-파일 확인 부탁드립니다.
-
-(본 계약서는 '1분 간편 전자계약 서비스 Freezone'을 통해 작성되었습니다)
-🌐 무료로 작성하기: https://freezone-1061689217082.us-west1.run.app/`;
-    
-        navigator.clipboard.writeText(message).then(() => {
-            alert("카톡 인사말이 복사되었습니다! 채팅창에 붙여넣으세요.");
-        });
-    };
-
-    const AnalysisItem: React.FC<{ title: string; description: string; isValid: boolean }> = ({ title, description, isValid }) => (
-        <div className="flex items-start space-x-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
-            <div className="flex-shrink-0 mt-0.5">
-                {isValid ? (
-                    <AnalysisValidIcon className="h-5 w-5 text-emerald-500" />
-                ) : (
-                    <AnalysisInvalidIcon className="h-5 w-5 text-rose-500" />
-                )}
-            </div>
-            <div>
-                <h4 className="font-bold text-slate-800 text-sm">{title}</h4>
-                <p className="text-xs text-slate-500 mt-0.5">{description}</p>
-            </div>
-        </div>
-    );
-    
-    // Updated: Analysis is now a Modal Content
-    const AnalysisModalContent = () => {
-        const checks = {
-            parties: formData.clientName.trim() !== '' && formData.freelancerName.trim() !== '',
-            scope: formData.task.trim() !== '' && formData.deliverables.length > 0 && formData.deliverables.every(d => d.trim() !== ''),
-            payment: formData.projectValue > 0 && clauses.payment.trim() !== '',
-            ip: clauses.ip.trim() !== '',
-            expert: true, 
-        };
-
-        const allValid = Object.values(checks).every(Boolean);
-
+    // Render Logic for Steps
+    const renderInfoStep = () => {
         return (
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-lg w-full mx-4">
-                <div className="bg-gradient-to-r from-primary-600 to-primary-800 p-6 flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                         <div className="bg-white/20 p-2 rounded-lg">
-                            <ShieldCheckIcon className="h-6 w-6 text-white" />
-                         </div>
-                         <div>
-                            <h3 className="text-lg font-bold text-white">AI 계약서 신뢰도 분석</h3>
-                            <p className="text-primary-100 text-xs">FreeZone AI Engine</p>
-                         </div>
+            <div className="space-y-6 animate-fadeIn">
+                 {infoStep === 0 && (
+                    <div className="space-y-6">
+                        <h3 className="text-xl font-bold text-slate-100 flex items-center">
+                            <span className="bg-primary-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">1</span>
+                            어떤 프로젝트인가요?
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">프로젝트명</label>
+                                <input 
+                                    type="text" name="projectName" value={formData.projectName} onChange={handleFormChange}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                    placeholder="예: 반응형 웹사이트 구축"
+                                />
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">계약 체결일</label>
+                                <input 
+                                    type="date" name="contractDate" value={formData.contractDate} onChange={handleFormChange}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">업종(카테고리)</label>
+                                <select 
+                                    name="industry" value={formData.industry} onChange={handleFormChange}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-primary-500 outline-none"
+                                >
+                                    <option value="">선택해주세요</option>
+                                    {INDUSTRY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                            </div>
+                            {formData.industry && (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-400 mb-2">주요 과업</label>
+                                    <select 
+                                        name="task" value={formData.task} onChange={handleFormChange}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    >
+                                        <option value="">선택해주세요</option>
+                                        {TASK_OPTIONS[formData.industry]?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                    <button onClick={() => setShowAnalysisModal(false)} className="text-white/70 hover:text-white transition-colors">
-                        <XMarkIcon className="h-6 w-6" />
-                    </button>
-                </div>
-                
-                <div className="p-6 space-y-6">
-                    <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        작성하신 계약서의 법적 안정성을 실시간으로 분석했습니다. <br/>
-                        <span className="font-bold text-slate-800">분쟁 발생 위험도: {allValid ? '매우 낮음 (안전)' : '중간 (확인 필요)'}</span>
-                    </p>
-
-                    <div className="space-y-2">
-                        <AnalysisItem isValid={checks.parties} title="핵심 당사자 명시" description="책임 소재가 명확한가요?" />
-                        <AnalysisItem isValid={checks.scope} title="구체적인 과업 범위" description="추가 과업 방지가 가능한가요?" />
-                        <AnalysisItem isValid={checks.payment} title="명확한 대금 지급 조건" description="미수금 위험이 관리되고 있나요?" />
-                        <AnalysisItem isValid={checks.ip} title="저작권 귀속 명시" description="소유권 분쟁 가능성이 없나요?" />
-                        <AnalysisItem isValid={checks.expert} title="업계 표준 준수" description="불공정 조항이 포함되지 않았나요?" />
+                )}
+                {infoStep === 1 && (
+                     <div className="space-y-6">
+                        <h3 className="text-xl font-bold text-slate-100 flex items-center">
+                            <span className="bg-primary-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                            누가 계약하나요?
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                                <h4 className="font-semibold text-primary-400 mb-4">의뢰인 (Client)</h4>
+                                <div className="space-y-3">
+                                    <input type="text" name="clientName" placeholder="상호명 또는 성함" value={formData.clientName} onChange={handleFormChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:ring-1 focus:ring-primary-500 outline-none"/>
+                                    
+                                    <div>
+                                        <label className="text-xs text-slate-500 mb-1 block">연락처 (선택사항)</label>
+                                        <input type="text" name="clientContact" placeholder="미입력 시 공란으로 표시됩니다" value={formData.clientContact} onChange={handleFormChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:ring-1 focus:ring-primary-500 outline-none placeholder-slate-600"/>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-slate-500 mb-1 block">주소 (선택사항)</label>
+                                        <input type="text" name="clientAddress" placeholder="미입력 시 공란으로 표시됩니다" value={formData.clientAddress} onChange={handleFormChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:ring-1 focus:ring-primary-500 outline-none placeholder-slate-600"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                                <h4 className="font-semibold text-primary-400 mb-4">작업자 (Freelancer)</h4>
+                                <div className="space-y-3">
+                                    <input type="text" name="freelancerName" placeholder="상호명 또는 성함" value={formData.freelancerName} onChange={handleFormChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:ring-1 focus:ring-primary-500 outline-none"/>
+                                    
+                                    <div>
+                                        <label className="text-xs text-slate-500 mb-1 block">연락처 (선택사항)</label>
+                                        <input type="text" name="freelancerContact" placeholder="미입력 시 공란으로 표시됩니다" value={formData.freelancerContact} onChange={handleFormChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:ring-1 focus:ring-primary-500 outline-none placeholder-slate-600"/>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-slate-500 mb-1 block">주소 (선택사항)</label>
+                                        <input type="text" name="freelancerAddress" placeholder="미입력 시 공란으로 표시됩니다" value={formData.freelancerAddress} onChange={handleFormChange} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:ring-1 focus:ring-primary-500 outline-none placeholder-slate-600"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6">
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="block text-sm font-medium text-slate-400">최종 산출물 (결과물)</label>
+                                {formData.deliverables.length === 0 && (
+                                    <span className="text-xs text-primary-400">💡 팁: 주요 과업 선택 시 추천 예시가 자동 입력됩니다.</span>
+                                )}
+                            </div>
+                            <div className="space-y-2">
+                                {formData.deliverables.map((item, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                        <input 
+                                            type="text" value={item} onChange={(e) => handleDeliverableChange(idx, e.target.value)}
+                                            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:ring-1 focus:ring-primary-500 outline-none"
+                                            placeholder="예: 원본 파일, 완료 보고서 등"
+                                        />
+                                        <button onClick={() => removeDeliverable(idx)} className="text-red-400 hover:text-red-300 px-2">
+                                            <XMarkIcon className="w-5 h-5"/>
+                                        </button>
+                                    </div>
+                                ))}
+                                <button onClick={addDeliverable} className="text-sm text-primary-400 font-medium hover:text-primary-300 flex items-center mt-2">
+                                    + 산출물 직접 추가하기
+                                </button>
+                            </div>
+                        </div>
                     </div>
-
-                     {allValid ? (
-                        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-center space-y-1">
-                            <p className="font-bold text-emerald-700 text-sm">✨ 완벽한 보호 장치가 마련되었어요!</p>
-                            <p className="text-xs text-emerald-600 leading-relaxed">
-                                이 계약서는 당신의 권리를 강력하게 보호합니다.
+                )}
+                {infoStep === 2 && (
+                    <div className="space-y-6">
+                        <h3 className="text-xl font-bold text-slate-100 flex items-center">
+                            <span className="bg-primary-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm mr-3">3</span>
+                            일정과 금액은 어떻게 되나요?
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">시작일</label>
+                                <input 
+                                    type="date" name="startDate" value={formData.startDate} onChange={handleFormChange}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">종료일</label>
+                                <input 
+                                    type="date" name="endDate" value={formData.endDate} onChange={handleFormChange}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-primary-500 outline-none"
+                                />
+                            </div>
+                        </div>
+                        {dateError && <p className="text-red-500 text-sm">{dateError}</p>}
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-slate-400 mb-2">총 계약 금액 (VAT 별도)</label>
+                            <div className="relative">
+                                <input 
+                                    type="text" name="projectValue" 
+                                    value={formData.projectValue.toLocaleString()} 
+                                    onChange={handleFormChange}
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-primary-500 outline-none pr-12 font-mono text-lg"
+                                />
+                                <span className="absolute right-4 top-3.5 text-slate-500 font-bold">KRW</span>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2 text-right">
+                                {numberToKoreanWon(formData.projectValue)} 원
                             </p>
                         </div>
-                    ) : (
-                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg text-center space-y-1">
-                             <p className="font-bold text-rose-700 text-sm">⚠️ 일부 정보가 부족합니다</p>
-                             <p className="text-xs text-rose-600 leading-relaxed">
-                                빈칸이나 모호한 표현이 있으면 추후 분쟁의 소지가 있습니다. 이전 단계로 돌아가 내용을 보완하는 것을 추천합니다.
-                             </p>
-                        </div>
-                    )}
-                    
+                    </div>
+                )}
+                
+                <div className="flex justify-between pt-6 border-t border-slate-800">
                     <button 
-                        onClick={() => setShowAnalysisModal(false)}
-                        className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg"
+                        onClick={handlePrevInfoStep} disabled={infoStep === 0}
+                        className={`px-6 py-3 rounded-lg font-medium transition-colors ${infoStep === 0 ? 'text-slate-600 cursor-not-allowed' : 'text-slate-300 hover:bg-slate-800'}`}
                     >
-                        확인 완료 (계약서 보기)
+                        이전
+                    </button>
+                    <button 
+                        onClick={handleNextInfoStep}
+                        className="bg-primary-600 hover:bg-primary-500 text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-primary-900/20 transition-all transform hover:scale-105"
+                    >
+                        {infoStep === infoFields.length - 1 ? '다음: 조항 검토하기' : '다음'}
                     </button>
                 </div>
             </div>
         );
-    };
+    }
 
-
-  return (
-    <div className="bg-slate-950 text-slate-300">
-      {/* PDF Generation Overlay */}
-      {isGeneratingPdf && (
-        <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-white">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-600 mb-4"></div>
-            <h2 className="text-2xl font-bold text-slate-900">계약서 PDF 생성 중...</h2>
-            <p className="text-slate-500 mt-2">잠시만 기다려주세요.</p>
-        </div>
-      )}
-
-      {/* Analysis Modal Overlay */}
-      {showAnalysisModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
-            <AnalysisModalContent />
-        </div>
-      )}
-
-      <section ref={contractRef} className="relative overflow-hidden bg-slate-950">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/40 via-slate-950 to-slate-950"></div>
-        <div className="absolute top-[-10rem] right-[-10rem] w-96 h-96 bg-primary-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-[-10rem] left-[-10rem] w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-500"></div>
-        
-        <div className="relative max-w-7xl mx-auto py-24 px-6 sm:py-32 sm:px-8 lg:px-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-transparent sm:text-6xl lg:text-7xl bg-clip-text bg-gradient-to-r from-slate-100 to-slate-400">
-            가장 쉬운 계약서 작성
-          </h1>
-          <p className="mt-6 text-2xl font-bold text-primary-400 sm:text-3xl">혼자 일해도, 혼자 감당하진 않게.</p>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-slate-300 sm:text-xl">
-            구두 계약, 복잡한 서류는 이제 그만. <br /> 1분 만에 계약서를 만들고 당신의 권리를 지키세요.
-          </p>
-        </div>
-
-        <div className="relative -mt-16 sm:-mt-24 pb-24 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-            <div className="flex justify-between items-center mb-12 max-w-3xl mx-auto">
-                {[1, 2, 3].map(s => (
-                    <React.Fragment key={s}>
-                        <div className="flex flex-col items-center z-10">
-                            <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold border-2 transition-all duration-300 ${step >= s ? 'bg-primary-500 border-primary-500 text-white' : 'bg-slate-200 border-slate-300 text-slate-500'}`}>
-                                {step > s ? <CheckCircleIcon className="h-6 w-6" /> : s}
-                            </div>
-                            <p className={`mt-2 text-sm font-semibold ${step >= s ? 'text-primary-500' : 'text-slate-500'}`}>{['기본정보', '세부조항', '검토 및 완성'][s-1]}</p>
-                        </div>
-                        {s < 3 && <div className={`flex-1 h-1 mx-4 transition-colors duration-300 ${step > s ? 'bg-primary-500' : 'bg-slate-300'}`}></div>}
-                    </React.Fragment>
-                ))}
+    return (
+        <div className="bg-slate-950 min-h-screen pb-20">
+            {/* Hero Section */}
+            <div className="relative overflow-hidden bg-slate-950 pt-16 sm:pt-24 pb-12 text-center">
+                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-primary-600/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+                <div className="max-w-4xl mx-auto px-6">
+                    <div className="inline-flex items-center space-x-2 bg-slate-900/80 backdrop-blur border border-slate-700 rounded-full px-4 py-1.5 mb-8">
+                        <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span className="text-sm font-medium text-slate-300">Beta: 무료로 계약서 생성 중</span>
+                    </div>
+                    <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-violet-400">1분 만에 끝내는</span><br/>
+                        안전한 프리랜서 계약
+                    </h1>
+                    <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+                        법률 용어 몰라도 괜찮아요. 업종별 표준 템플릿과 AI 조항 추천으로 <br className="hidden sm:block"/>
+                        가장 빠르고 완벽한 용역 계약서를 만들어보세요.
+                    </p>
+                     <button onClick={() => {
+                            contractRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }} className="bg-white text-slate-900 px-8 py-4 rounded-full font-bold text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all transform hover:scale-105">
+                        지금 계약서 만들기
+                    </button>
+                </div>
             </div>
 
-            {step === 1 && (() => {
-                const currentInfoField = infoFields[infoStep];
-                return (
-                    <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl space-y-8 max-w-5xl mx-auto">
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-900 mb-1">기본 정보 입력 ({infoStep + 1}/{infoFields.length})</h2>
-                            <p className="text-slate-600">{currentInfoField.description}</p>
-                        </div>
-
-                        {infoStep === 0 && (
-                            <div className="space-y-8 pt-4">
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                        <label htmlFor="industry" className="font-semibold text-slate-700">분야</label>
-                                        <select id="industry" name="industry" value={formData.industry} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                                            <option value="" disabled>분야를 선택하세요</option>
-                                            {INDUSTRY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                        </select>
+            {/* Main Tool Container */}
+            <div ref={contractRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
+                <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-700 shadow-2xl overflow-hidden">
+                    {/* Progress Bar */}
+                    <div className="flex border-b border-slate-800">
+                         {[1, 2, 3].map((s) => (
+                            <div key={s} className={`flex-1 py-4 text-center text-sm font-medium transition-colors relative ${step === s ? 'text-primary-400' : step > s ? 'text-slate-300' : 'text-slate-600'}`}>
+                                <div className="flex items-center justify-center space-x-2">
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs border ${step === s ? 'border-primary-400 bg-primary-400/10' : step > s ? 'border-slate-500 bg-slate-800' : 'border-slate-700 bg-slate-800'}`}>
+                                        {step > s ? <CheckCircleIcon className="w-4 h-4" /> : s}
                                     </div>
-                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                        <label htmlFor="task" className="font-semibold text-slate-700">주요 과업</label>
-                                        <select id="task" name="task" value={formData.task} onChange={handleFormChange} disabled={!formData.industry} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50">
-                                            <option value="" disabled>주요 과업을 선택하세요</option>
-                                            {TASK_OPTIONS[formData.industry]?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                        </select>
-                                    </div>
+                                    <span>{s === 1 ? '정보 입력' : s === 2 ? '조항 검토' : '완료 및 다운로드'}</span>
                                 </div>
-                                <div>
-                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                        <label htmlFor="projectName" className="font-semibold text-slate-700">프로젝트명</label>
-                                        <input type="text" id="projectName" name="projectName" value={formData.projectName} onChange={handleFormChange} placeholder="예: 2024년 브랜드 리뉴얼" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                    </div>
-                                </div>
+                                {step === s && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-400"></div>}
                             </div>
-                        )}
-                        
-                        {infoStep === 1 && (
-                            <div className="space-y-8 pt-4">
-                                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800 flex items-start gap-2">
-                                    <LightBulbIcon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                    <p>연락처와 주소는 <strong>선택 사항</strong>입니다. 입력하지 않으시면 <strong>빈칸(밑줄)</strong>으로 생성되며, 추후 자필로 작성하거나 파일 변환 후 직접 입력하실 수 있습니다.</p>
-                                </div>
-                                <div className="grid md:grid-cols-2 gap-6">
-                                    <div>
-                                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-3">
-                                            <label htmlFor="clientName" className="font-semibold text-slate-700 mb-1 block">의뢰인 (갑)</label>
-                                            <input type="text" id="clientName" name="clientName" value={formData.clientName} onChange={handleFormChange} placeholder="성함 또는 회사명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                            <input type="text" name="clientContact" value={formData.clientContact} onChange={handleFormChange} placeholder="연락처 (선택)" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                            <input type="text" name="clientAddress" value={formData.clientAddress} onChange={handleFormChange} placeholder="주소 (선택)" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-3">
-                                            <label htmlFor="freelancerName" className="font-semibold text-slate-700 mb-1 block">작업자 (을)</label>
-                                            <input type="text" id="freelancerName" name="freelancerName" value={formData.freelancerName} onChange={handleFormChange} placeholder="성함 또는 활동명" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                            <input type="text" name="freelancerContact" value={formData.freelancerContact} onChange={handleFormChange} placeholder="연락처 (선택)" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                            <input type="text" name="freelancerAddress" value={formData.freelancerAddress} onChange={handleFormChange} placeholder="주소 (선택)" className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-4">
-                                        <label className="font-semibold text-slate-700">최종 산출물</label>
-                                        {formData.deliverables.map((item, index) => (
-                                            <div key={index} className="flex items-center gap-2">
-                                                <input type="text" value={item} onChange={(e) => handleDeliverableChange(index, e.target.value)} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                                <button type="button" onClick={() => removeDeliverable(index)} className="p-2 text-slate-500 hover:text-rose-500"><XMarkIcon className="h-5 w-5"/></button>
-                                            </div>
-                                        ))}
-                                        <button type="button" onClick={addDeliverable} className="text-sm font-semibold text-primary-600 hover:text-primary-500 flex items-center space-x-1 pt-2"><PlusIcon className="h-4 w-4"/><span>산출물 추가</span></button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {infoStep === 2 && (
-                            <div className="space-y-8 pt-4">
-                                <div>
-                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                        <label htmlFor="projectValue" className="font-semibold text-slate-700">총 계약 금액 (VAT 별도)</label>
-                                        <div className="relative">
-                                            <input type="text" id="projectValue" name="projectValue" value={formData.projectValue.toLocaleString('ko-KR')} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 pl-8 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">₩</span>
-                                        </div>
-                                        <p className="text-right text-sm text-slate-600">금 {numberToKoreanWon(formData.projectValue)} 원정</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                        <label htmlFor="contractDate" className="font-semibold text-slate-700">계약 체결일</label>
-                                        <input type="date" id="contractDate" name="contractDate" value={formData.contractDate} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="bg-slate-50 p-4 rounded-md border border-slate-300 space-y-2">
-                                        <label className="font-semibold text-slate-700">계약 기간</label>
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            <input type="date" id="startDate" name="startDate" value={formData.startDate} onChange={handleFormChange} className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-                                            <input type="date" id="endDate" name="endDate" value={formData.endDate} onChange={handleFormChange} className={`w-full bg-white text-slate-900 border rounded-md p-3 transition-colors ${dateError ? 'border-rose-500 focus:ring-rose-500 focus:border-rose-500' : 'border-slate-300 focus:ring-primary-500 focus:border-primary-500'}`} />
-                                        </div>
-                                        {dateError && <p className="text-sm text-rose-500 text-center pt-2">{dateError}</p>}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="flex justify-between items-center pt-4">
-                            <button 
-                                onClick={handlePrevInfoStep}
-                                className={`inline-flex items-center justify-center px-6 py-3 border border-slate-300 text-base font-bold rounded-full text-slate-700 bg-white hover:bg-slate-100 transition-colors ${infoStep === 0 ? 'invisible' : 'visible'}`}>
-                                이전
-                            </button>
-                            <button 
-                                onClick={handleNextInfoStep}
-                                disabled={(infoStep === 0 && !formData.task) || (infoStep === infoFields.length - 1 && !!dateError)}
-                                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-bold rounded-full text-white bg-primary-600 hover:bg-primary-500 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                {infoStep === infoFields.length - 1 ? '다음: 세부 조항 작성' : '다음'}
-                            </button>
-                        </div>
+                        ))}
                     </div>
-                );
-            })()}
-            
-            {step === 2 && (() => {
-                const currentClauseField = clauseFields[clauseStep];
-                const suggestions = (clauseGuidance as any)?.[currentClauseField.key] || [];
 
-                return (
-                    <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl space-y-8 max-w-5xl mx-auto">
-                        <div ref={clauseTitleRef}>
-                            <h2 className="text-2xl font-bold text-slate-900 mb-1">세부 조항 선택 ({clauseStep + 1}/{clauseFields.length})</h2>
-                            <p className="text-slate-600">분쟁을 막는 핵심 조항들을 꼼꼼하게 선택하고, 필요하다면 직접 수정하세요.</p>
-                        </div>
-                        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                            <div className="flex items-center space-x-2 text-lg font-semibold text-slate-900 mb-2">
-                                {React.cloneElement(currentClauseField.icon, { className: "h-6 w-6 text-primary-500" })}
-                                <span>{currentClauseField.title}</span>
-                                <button type="button" onMouseEnter={() => setActiveClauseHelp(currentClauseField.key)} onMouseLeave={() => setActiveClauseHelp(null)} className="group relative">
-                                    <QuestionMarkCircleIcon className="h-5 w-5 text-slate-500" />
-                                    {activeClauseHelp === currentClauseField.key && (
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-slate-800 text-slate-100 text-xs rounded-lg p-3 z-10 shadow-lg border border-slate-600">
-                                            {CLAUSE_TIPS[currentClauseField.key]}
-                                            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-800"></div>
+                    <div className="p-6 sm:p-10">
+                        {step === 1 && renderInfoStep()}
+
+                        {step === 2 && (
+                            <div className="space-y-8 animate-fadeIn" ref={clauseTitleRef}>
+                                <div className="text-center mb-8">
+                                    <h3 className="text-2xl font-bold text-slate-100">계약서의 핵심 조항을 확인하세요</h3>
+                                    <p className="text-slate-400 mt-2">선택한 업종({formData.industry})에 딱 맞는 조항을 추천해드렸어요.</p>
+                                </div>
+
+                                <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+                                    {/* Sidebar Navigation - Fixed width on desktop */}
+                                    <div className="lg:w-72 flex-shrink-0 space-y-2">
+                                        {clauseFields.map((field, idx) => (
+                                            <button
+                                                key={field.key}
+                                                onClick={() => setClauseStep(idx)}
+                                                className={`w-full text-left px-4 py-3 rounded-lg flex items-center space-x-3 transition-all ${
+                                                    clauseStep === idx 
+                                                    ? 'bg-primary-900/30 text-primary-400 border border-primary-500/30' 
+                                                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                                }`}
+                                            >
+                                                {/* Simplified Icon: Number Badge */}
+                                                <div className={`w-6 h-6 rounded flex-shrink-0 flex items-center justify-center text-xs font-bold border transition-colors ${
+                                                     clauseStep === idx 
+                                                     ? 'border-primary-400 bg-primary-400/20' 
+                                                     : 'border-slate-600 bg-slate-800'
+                                                }`}>
+                                                    {idx + 1}
+                                                </div>
+                                                <span className="font-medium text-sm whitespace-nowrap">{field.title}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Content Area */}
+                                    <div className="flex-1 bg-slate-950 rounded-xl border border-slate-800 p-6 relative min-h-[400px]">
+                                        <div className="mb-6 flex items-center justify-between">
+                                            <h4 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                                                <span className="bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                                                    {clauseStep + 1}
+                                                </span>
+                                                {clauseFields[clauseStep].title}
+                                            </h4>
                                         </div>
-                                    )}
-                                </button>
-                            </div>
-                            
-                             {currentClauseField.key === 'scope' ? (
-                                <>
-                                    <p className="text-sm text-slate-600 my-4">
-                                        최종 산출물 외에, 어떤 작업을 수행할지 구체적으로 작성해주세요. '알아서 잘'은 분쟁의 씨앗이 될 수 있습니다.
-                                    </p>
-                                    <textarea
-                                        id="scope"
-                                        name="scope"
-                                        value={clauses.scope}
-                                        onChange={handleClauseChange}
-                                        rows={6}
-                                        placeholder={CLAUSE_PLACEHOLDERS.scope}
-                                        className="w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                    />
-                                </>
-                            ) : (
-                                <>
-                                    {suggestions.length > 0 && (
-                                        <div className="mt-4">
-                                            <h3 className="text-sm font-semibold text-cyan-700 mb-2 flex items-center space-x-1.5">
-                                                <LightBulbIcon className="h-4 w-4" />
-                                                <span>유형별 추천 조항</span>
-                                            </h3>
-                                            <p className="text-xs text-slate-500 mb-4">
-                                                아래 추천 조항 중 프로젝트에 가장 적합한 것을 선택하세요.
-                                            </p>
+
+                                        {/* Help/Tip Box - Always Visible */}
+                                        {CLAUSE_TIPS[clauseFields[clauseStep].key] && (
+                                            <div className="mb-4 bg-primary-900/20 border border-primary-500/30 rounded-lg p-4 animate-fadeIn">
+                                                <p className="text-sm text-primary-300 font-medium mb-1 flex items-center gap-2">
+                                                    <ChatBubbleOvalLeftEllipsisIcon className="w-4 h-4"/>
+                                                    작성 팁
+                                                </p>
+                                                <p className="text-sm text-slate-300 pl-6">{CLAUSE_TIPS[clauseFields[clauseStep].key]}</p>
+                                            </div>
+                                        )}
+
+                                        <textarea
+                                            name={clauseFields[clauseStep].key}
+                                            value={(clauses as any)[clauseFields[clauseStep].key]}
+                                            onChange={handleClauseChange}
+                                            className="w-full h-48 bg-slate-900 border border-slate-700 rounded-lg p-4 text-slate-100 focus:ring-2 focus:ring-primary-500 outline-none leading-relaxed resize-none"
+                                            placeholder={CLAUSE_PLACEHOLDERS[clauseFields[clauseStep].key]}
+                                        />
+
+                                        {/* Recommendations */}
+                                        <div className="mt-6">
+                                            {((clauseGuidance as any)[clauseFields[clauseStep].key] || []).length > 0 && (
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">추천 조항 (클릭하여 적용)</p>
+                                            )}
                                             <div className="space-y-4">
-                                                {suggestions.map((item: any, index: number) => (
+                                                {((clauseGuidance as any)[clauseFields[clauseStep].key] || []).map((item: ClauseSuggestion, i: number) => (
                                                     <button
-                                                        key={index}
-                                                        type="button"
-                                                        onClick={() => handleApplySuggestion(currentClauseField.key, item.suggestion)}
-                                                        className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ease-in-out transform ${(clauses as any)[currentClauseField.key] === item.suggestion ? 'bg-primary-50 border-primary-500 scale-[1.01]' : 'bg-slate-100 border-slate-200 hover:border-slate-400'}`}
+                                                        key={i}
+                                                        onClick={() => handleApplySuggestion(clauseFields[clauseStep].key, item.suggestion)}
+                                                        className="w-full text-left bg-slate-800 border border-slate-700 rounded-xl overflow-hidden hover:border-primary-500 transition-all group shadow-sm hover:shadow-md"
                                                     >
-                                                        <h4 className="font-bold text-md text-slate-900">{item.title}</h4>
-                                                        <div className="mt-2 p-3 bg-white rounded-md border border-slate-200">
-                                                            <pre className="whitespace-pre-wrap font-sans text-sm text-slate-700">{item.suggestion}</pre>
+                                                        {/* Header */}
+                                                        <div className="px-4 py-3 border-b border-slate-700/50 bg-slate-800/80">
+                                                            <div className="flex items-center">
+                                                                <span className="text-sm font-bold text-primary-400">{item.title}</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="mt-3 p-3 bg-slate-100/70 rounded-md text-xs text-slate-600 border-l-4 border-slate-300">
-                                                            <pre className="whitespace-pre-wrap font-sans">{item.rationale}</pre>
+                                                        
+                                                        {/* Body */}
+                                                        <div className="p-4 space-y-4">
+                                                            {/* Clause Text */}
+                                                            <p className="text-sm text-slate-200 leading-relaxed font-medium bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                                                                {item.suggestion}
+                                                            </p>
+
+                                                            {/* Context Box: Problem & Solution */}
+                                                            <div className="flex flex-col sm:flex-row gap-3 text-xs bg-slate-700/30 rounded-lg p-3">
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center text-orange-300 font-bold mb-1">
+                                                                        <span className="mr-1">🤔</span> 문제점
+                                                                    </div>
+                                                                    <p className="text-slate-400 leading-snug">{item.problem}</p>
+                                                                </div>
+                                                                <div className="hidden sm:block w-px bg-slate-600/50"></div>
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center text-emerald-300 font-bold mb-1">
+                                                                        <span className="mr-1">💡</span> 해결책
+                                                                    </div>
+                                                                    <p className="text-slate-400 leading-snug">{item.solution}</p>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
-                                    )}
-                                    <div className="mt-6">
-                                        <h3 className="text-sm font-semibold text-cyan-700 mb-2 flex items-center space-x-1.5">
-                                            <PencilSquareIcon className="h-4 w-4" />
-                                            <span>내용 확인 및 직접 수정</span>
-                                        </h3>
-                                        <textarea
-                                            id={currentClauseField.key}
-                                            name={currentClauseField.key}
-                                            value={(clauses as any)[currentClauseField.key]}
-                                            onChange={handleClauseChange}
-                                            rows={6}
-                                            placeholder={CLAUSE_PLACEHOLDERS[currentClauseField.key]}
-                                            className="mt-2 w-full bg-white text-slate-900 border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                        />
                                     </div>
-                                </>
+                                </div>
+                                
+                                <div className="flex justify-between pt-6 border-t border-slate-800">
+                                    <button onClick={handlePrevClause} className="text-slate-400 hover:text-white px-4 py-2">이전</button>
+                                    <button 
+                                        onClick={handleNextClause}
+                                        className="bg-primary-600 hover:bg-primary-500 text-white px-8 py-3 rounded-lg font-bold shadow-lg shadow-primary-900/20 transition-all transform hover:scale-105"
+                                    >
+                                        {clauseStep === clauseFields.length - 1 ? '계약서 완성하기' : '다음 조항'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="animate-fadeIn">
+                                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                                    <div className="text-center md:text-left">
+                                        <h3 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                                            <CheckCircleIcon className="w-8 h-8 text-emerald-500" />
+                                            계약서가 완성되었습니다!
+                                        </h3>
+                                        <p className="text-slate-400 mt-1">내용을 확인하고 PDF로 저장하거나 복사하세요.</p>
+                                    </div>
+                                    <div className="flex space-x-3">
+                                        <button onClick={handleCopy} className="flex items-center space-x-2 px-4 py-2 bg-slate-800 text-slate-200 rounded-lg hover:bg-slate-700 transition-colors border border-slate-700">
+                                            <ClipboardIcon className="w-5 h-5" />
+                                            <span>복사</span>
+                                        </button>
+                                        <button 
+                                            onClick={handleDownloadPdf} 
+                                            disabled={isGeneratingPdf}
+                                            className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-500 transition-colors shadow-lg shadow-primary-900/20"
+                                        >
+                                            {isGeneratingPdf ? (
+                                                <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                                            ) : (
+                                                <ArrowDownTrayIcon className="w-5 h-5" />
+                                            )}
+                                            <span>PDF 저장</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Preview Area (Wider Screen View) */}
+                                <div className="bg-slate-200 p-4 md:p-8 rounded-xl overflow-hidden overflow-x-auto">
+                                    <div 
+                                        id="contract-print-area" 
+                                        className="bg-white text-black p-12 md:p-16 shadow-sm w-full max-w-5xl mx-auto min-h-[800px] text-[11pt] leading-relaxed relative"
+                                    >
+                                        <h1 className="text-3xl font-bold text-center mb-12 border-b-2 border-black pb-6">용역 계약서</h1>
+                                        
+                                        {/* Consolidated Preamble */}
+                                        <div className="text-left mb-8 leading-relaxed">
+                                            <p>
+                                                의뢰인 <span className="font-bold text-black">{formData.clientName || '________________'}</span>(이하 "갑")과
+                                                작업자 <span className="font-bold text-black">{formData.freelancerName || '________________'}</span>(이하 "을")은
+                                                상호 신뢰를 바탕으로 다음과 같이 용역 계약을 체결한다.
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 1 조 (목적)</h3>
+                                                <p className="text-justify">
+                                                    본 계약은 "갑"이 의뢰한 '<span className="text-black">{formData.projectName || '(프로젝트명)'}</span>'(이하 "본 용역")을 "을"이 수행하고, "갑"이 이에 대한 대가를 지급함에 있어 필요한 제반 사항을 규정함을 목적으로 한다.
+                                                </p>
+                                            </div>
+
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 2 조 (용역의 범위 및 내용)</h3>
+                                                <p>"을"이 수행할 용역의 범위는 다음 각 호와 같다.</p>
+                                                <ol className="list-decimal list-inside mt-2 space-y-1 ml-2">
+                                                    <li>주요 과업: <span className="text-black">{formData.task}</span></li>
+                                                    <li>최종 산출물:
+                                                        {/* Standard List Style */}
+                                                        <ul className="list-disc list-inside mt-1 space-y-1 ml-4">
+                                                            {formData.deliverables.map((d, i) => (
+                                                                <li key={i} className="text-black">
+                                                                    {d}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </li>
+                                                    <li>상세 내용: <br/><span className="whitespace-pre-wrap text-black block mt-1">{clauses.scope}</span></li>
+                                                </ol>
+                                            </div>
+
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 3 조 (계약 기간)</h3>
+                                                <p>본 용역의 수행 기간은 <span className="text-black">{getFormattedDate(formData.startDate)}</span>부터 <span className="text-black">{getFormattedDate(formData.endDate)}</span>까지로 한다.</p>
+                                            </div>
+
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 4 조 (계약 금액 및 지급 방법)</h3>
+                                                <ol className="list-decimal list-inside space-y-1 ml-2">
+                                                    <li>총 계약 금액: 일금 <span className="text-black">{numberToKoreanWon(formData.projectValue)}</span> 원정 (<span className="text-black">₩{formData.projectValue.toLocaleString()}</span>), 부가가치세 별도</li>
+                                                    <li>지급 방법: <br/><span className="whitespace-pre-wrap text-black block mt-1">{clauses.payment}</span></li>
+                                                </ol>
+                                            </div>
+
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 5 조 (수정 및 검수)</h3>
+                                                <p className="whitespace-pre-wrap text-black">{clauses.revisions}</p>
+                                            </div>
+
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 6 조 (지식재산권의 귀속)</h3>
+                                                <p className="whitespace-pre-wrap text-black">{clauses.ip}</p>
+                                            </div>
+
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 7 조 (상호 협조 및 소통)</h3>
+                                                <p className="whitespace-pre-wrap text-black">{clauses.feedback}</p>
+                                            </div>
+
+                                             <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 8 조 (계약의 해지)</h3>
+                                                <p className="whitespace-pre-wrap text-black">{clauses.termination}</p>
+                                            </div>
+
+                                             <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 9 조 (비밀유지)</h3>
+                                                <p className="whitespace-pre-wrap text-black">{clauses.review}</p>
+                                            </div>
+                                            
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 10 조 (분쟁의 해결)</h3>
+                                                <p className="text-justify">본 계약과 관련하여 분쟁이 발생한 경우 당사자 간의 합의에 의해 해결함을 원칙으로 하며, 합의가 이루어지지 않을 경우 "갑"의 소재지를 관할하는 법원을 전속 관할 법원으로 한다.</p>
+                                            </div>
+
+                                            <div className="break-inside-avoid">
+                                                <h3 className="font-bold text-lg mb-2">제 11 조 (기타)</h3>
+                                                <p>본 계약에 명시되지 않은 사항은 상관례 및 관계 법령에 따른다.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="break-inside-avoid mt-16 pt-8 border-t border-black">
+                                            <p className="text-center mb-8">{getFormattedDate(formData.contractDate)}</p>
+                                            
+                                            <div className="grid grid-cols-2 gap-8">
+                                                <div>
+                                                    <h4 className="font-bold text-lg mb-4 text-[#444444] border-b border-gray-300 pb-2">의뢰인 (갑)</h4>
+                                                    <table className="w-full text-sm">
+                                                        <tbody>
+                                                            <tr>
+                                                                <td className="py-2 text-[#444444] w-20">성명/상호</td>
+                                                                <td className="py-2 font-bold text-black">
+                                                                    {formData.clientName || '________________'}
+                                                                    <span className="text-gray-300 ml-1 font-normal">(서명/인)</span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td className="py-2 text-[#444444]">연락처</td>
+                                                                <td className="py-2 font-bold text-black">{formData.clientContact || ''}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td className="py-2 text-[#444444]">주소</td>
+                                                                <td className="py-2 font-bold text-black">{formData.clientAddress || ''}</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-lg mb-4 text-[#444444] border-b border-gray-300 pb-2">작업자 (을)</h4>
+                                                    <table className="w-full text-sm">
+                                                        <tbody>
+                                                            <tr>
+                                                                <td className="py-2 text-[#444444] w-20">성명/상호</td>
+                                                                <td className="py-2 font-bold text-black">
+                                                                    {formData.freelancerName || '________________'}
+                                                                    <span className="text-gray-300 ml-1 font-normal">(서명/인)</span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td className="py-2 text-[#444444]">연락처</td>
+                                                                <td className="py-2 font-bold text-black">{formData.freelancerContact || ''}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td className="py-2 text-[#444444]">주소</td>
+                                                                <td className="py-2 font-bold text-black">{formData.freelancerAddress || ''}</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-12 bg-slate-900 rounded-2xl p-8 border border-slate-700 text-center relative overflow-hidden">
+                                     <div className="absolute top-0 right-0 p-32 bg-primary-500/10 rounded-full blur-3xl -z-0"></div>
+                                     <div className="relative z-10">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary-500/20">
+                                            <BellIcon className="w-8 h-8 text-white" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-white mb-3">곧 출시될 안전 기능도 놓치지 마세요</h3>
+                                        <p className="text-slate-400 mb-8 max-w-lg mx-auto">
+                                            먹튀 방지 <strong>예치금(Escrow)</strong>, 체불 걱정 없는 <strong>자동 정산</strong>, <br/>
+                                            그리고 법적 <strong>보장 보험</strong>까지. 가장 먼저 소식을 전해드릴까요?
+                                        </p>
+                                        <button 
+                                            onClick={handleNotify}
+                                            disabled={isNotified}
+                                            className={`px-8 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg ${isNotified ? 'bg-emerald-600 text-white cursor-default' : 'bg-white text-slate-900 hover:bg-slate-100'}`}
+                                        >
+                                            {isNotified ? '알림 신청이 완료되었습니다!' : '안전 기능 출시 알림 받기'}
+                                        </button>
+                                     </div>
+                                </div>
+                                
+                                <div className="text-center mt-8">
+                                    <button onClick={handleBackToClauses} className="text-slate-500 hover:text-slate-300 underline">
+                                        내용 수정하기
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Product Features Section */}
+            <div className="mt-0">
+                <ProductFeatures />
+            </div>
+
+            {/* Pricing / Modular Features Section */}
+            <div className="mt-0">
+                <PricingFeatures onGoToContract={onGoToContract} />
+            </div>
+
+            <div className="mt-0">
+                <FaqPage />
+            </div>
+
+            {/* Analysis Modal */}
+            {showAnalysisModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-md relative">
+                        {/* Header */}
+                        <div className="bg-blue-600 p-6 relative">
+                            <button onClick={() => setShowAnalysisModal(false)} className="absolute top-6 right-6 text-blue-100 hover:text-white transition-colors">
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                            <div className="flex items-center gap-3 mb-1">
+                                <div className="bg-white/20 p-1.5 rounded-lg">
+                                    <ShieldCheckIcon className="w-6 h-6 text-white" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white">AI 계약서 신뢰도 분석</h3>
+                            </div>
+                            <p className="text-blue-100 text-sm font-medium">FreeZone AI Engine</p>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6">
+                            {/* Summary Box */}
+                            <div className="bg-slate-50 rounded-lg p-4 mb-6 border border-slate-100">
+                                <p className="text-slate-600 text-sm mb-1">작성하신 계약서의 법적 안정성을 실시간으로 분석했습니다.</p>
+                                <p className="text-slate-900 font-bold">
+                                    분쟁 발생 위험도: 
+                                    <span className={analysisResult.isRisk ? "text-orange-500 ml-1" : "text-emerald-500 ml-1"}>
+                                        {analysisResult.isRisk ? "중간 (확인 필요)" : "낮음 (안전)"}
+                                    </span>
+                                </p>
+                            </div>
+
+                            {/* Checklist */}
+                            <div className="space-y-5 mb-8">
+                                {analysisResult.checks.map((check) => (
+                                    <div key={check.id} className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 mt-0.5">
+                                            {check.isValid ? (
+                                                <CheckCircleIcon className="w-6 h-6 text-emerald-500" />
+                                            ) : (
+                                                <XCircleIcon className="w-6 h-6 text-red-500" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className={`font-bold text-sm ${check.isValid ? 'text-slate-800' : 'text-red-500'}`}>
+                                                {check.label}
+                                            </p>
+                                            <p className="text-xs text-slate-500 mt-0.5">{check.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Warning Box (Only if risk) */}
+                            {analysisResult.isRisk && (
+                                <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-6 flex gap-3">
+                                    <ExclamationTriangleIcon className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                                    <div>
+                                        <p className="text-sm font-bold text-red-600 mb-1">일부 정보가 부족합니다</p>
+                                        <p className="text-xs text-red-400 leading-relaxed">
+                                            빈칸이나 모호한 표현이 있으면 추후 분쟁의 소지가 있습니다. 이전 단계로 돌아가 내용을 보완하는 것을 추천합니다.
+                                        </p>
+                                    </div>
+                                </div>
                             )}
-                        </div>
-                        <div className="flex justify-between">
-                            <button onClick={handlePrevClause} className="inline-flex items-center justify-center px-6 py-3 border border-slate-300 text-base font-bold rounded-full text-slate-700 bg-white hover:bg-slate-100 transition-colors">이전</button>
-                            <button onClick={handleNextClause} className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-bold rounded-full text-white bg-primary-600 hover:bg-primary-500 transition-all transform hover:scale-105">
-                                {clauseStep === clauseFields.length - 1 ? '다음: 계약서 검토' : '다음'}
-                            </button>
-                        </div>
-                    </div>
-                )
-            })()}
 
-            {step === 3 && (
-                <div className="bg-white text-slate-800 p-8 rounded-2xl shadow-2xl max-w-5xl mx-auto">
-                     <div className="flex justify-between items-start">
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-900 mb-1">계약서 검토 및 완성</h2>
-                            <p className="text-slate-600">최종 내용을 확인하고 계약을 완성하세요.</p>
-                        </div>
-                        <button 
-                            onClick={() => setShowAnalysisModal(true)}
-                            className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-4 py-2 rounded-full transition-colors"
-                        >
-                            <ShieldCheckIcon className="h-5 w-5" />
-                            <span>분석 리포트 다시 보기</span>
-                        </button>
-                    </div>
-                    
-                    <div className="mt-8">
-                        <div className="relative">
-                            <div className="p-8 bg-slate-50 border border-slate-200 rounded-lg max-h-[70vh] overflow-y-auto transition-all duration-300">
-                                <pre id="contract-content" className="whitespace-pre-wrap font-sans text-sm text-slate-800 leading-relaxed">
-                                    {generateContractText()}
-                                </pre>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="mt-8 flex flex-col items-center space-y-3 w-full max-w-lg mx-auto">
-                        <div className="flex flex-col sm:flex-row gap-3 w-full">
-                            {/* Copy Text Button - Style Enhanced */}
-                            <button onClick={handleCopy} className="flex-1 flex items-center justify-center px-6 py-3.5 border-2 border-slate-100 text-sm font-bold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 hover:border-slate-300 transition-all">
-                                <DocumentDuplicateIcon className="h-5 w-5 mr-2 text-slate-600" />
-                                텍스트만 복사
-                            </button>
-                            {/* PDF Button - Primary */}
-                            <button onClick={handleDownloadPdf} className="flex-1 flex items-center justify-center px-6 py-3.5 border border-transparent text-sm font-bold rounded-xl text-white bg-primary-600 hover:bg-primary-500 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-                                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-                                PDF로 저장하기
-                            </button>
-                        </div>
-
-                        {/* Sending Helper Section - Yellow Theme & One-line layout */}
-                        <div className="w-full bg-yellow-50 rounded-xl p-4 border border-yellow-200 flex flex-col sm:flex-row items-center justify-between gap-4 max-w-lg">
-                            <div className="text-center sm:text-left flex-1">
-                                <p className="text-sm font-bold text-slate-800 mb-1">카카오톡으로 계약서를 보내시나요?</p>
-                                <p className="text-xs text-slate-600 break-keep">파일만 덜렁 보내기 민망하다면? <br className="hidden sm:block"/> 정중한 인사말을 복사해서 함께 보내보세요.</p>
-                            </div>
+                            {/* Action Button */}
                             <button 
-                                onClick={handleCopyKakao} 
-                                className="flex-shrink-0 flex items-center justify-center px-4 py-3 text-sm font-bold rounded-lg text-[#3c1e1e] bg-[#FEE500] hover:bg-[#FDD835] transition-all shadow-sm whitespace-nowrap"
+                                onClick={() => setShowAnalysisModal(false)}
+                                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl"
                             >
-                                <ChatBubbleOvalLeftEllipsisIcon className="h-4 w-4 mr-2" />
-                                인사말 복사하기
+                                확인 완료 (계약서 보기)
                             </button>
                         </div>
-                    </div>
-
-                    <div className="mt-12 flex justify-between">
-                         <button onClick={handleBackToClauses} className="inline-flex items-center justify-center px-6 py-3 border border-slate-300 text-base font-bold rounded-full text-slate-700 bg-white hover:bg-slate-100 transition-colors">이전</button>
                     </div>
                 </div>
             )}
         </div>
-      </section>
-      
-      {/* How it works */}
-      <section className="py-20 sm:py-24 bg-slate-900">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-extrabold text-slate-100 sm:text-4xl">계약서 작성, 이렇게 쉬워요</h2>
-            <p className="mt-4 text-lg text-slate-400">단 3단계로 복잡한 계약 과정을 끝내보세요.</p>
-          </div>
-          <div className="mt-16 grid md:grid-cols-3 gap-12 text-center">
-            <div className="flex flex-col items-center">
-              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-500/10 border-2 border-primary-500/30 text-primary-400">
-                <DocumentTextIcon className="h-8 w-8" />
-              </div>
-              <h3 className="mt-6 text-xl font-bold text-slate-100">1. 정보 입력</h3>
-              <p className="mt-2 text-slate-400">프로젝트 기본 정보를 입력하고 AI 추천 조항으로 똑똑하게 계약서를 채워요.</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-500/10 border-2 border-primary-500/30 text-primary-400">
-                <ScaleIcon className="h-8 w-8" />
-              </div>
-              <h3 className="mt-6 text-xl font-bold text-slate-100">2. 조항 선택</h3>
-              <p className="mt-2 text-slate-400">업종별 표준 조항과 AI 추천 기능으로 빈틈없는 계약서를 완성하세요.</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary-500/10 border-2 border-primary-500/30 text-primary-400">
-                <ArrowDownTrayIcon className="h-8 w-8" />
-              </div>
-              <h3 className="mt-6 text-xl font-bold text-slate-100">3. 간편 저장/전송</h3>
-              <p className="mt-2 text-slate-400">본문 복사, PDF 저장 또는 카톡 멘트 복사로 즉시 활용하세요.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-20 sm:py-24">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-extrabold text-slate-100 sm:text-4xl">당신의 시간을 아껴줄 강력한 기능</h2>
-            <p className="mt-4 text-lg text-slate-400">FreeZone은 단순한 계약서 생성을 넘어, 프리랜서를 위한 다양한 보호 장치를 제공합니다.</p>
-          </div>
-          <div className="mt-16 grid md:grid-cols-2 gap-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex space-x-6">
-              <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-lg bg-cyan-500/10 text-cyan-400">
-                <LightBulbIcon className="h-7 w-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-100">AI 추천 조항</h3>
-                <p className="mt-1 text-slate-400">어떤 조항을 넣을지 막막한가요? 프로젝트 유형에 맞는 필수 조항을 AI가 추천해 드립니다.</p>
-              </div>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex space-x-6">
-              <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-lg bg-emerald-500/10 text-emerald-400">
-                <ShieldCheckIcon className="h-7 w-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-100">실시간 신뢰도 분석</h3>
-                <p className="mt-1 text-slate-400">혹시 불리한 조항은 없는지, AI가 계약서를 실시간으로 분석하여 분쟁 위험을 알려드립니다.</p>
-              </div>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex space-x-6">
-              <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-lg bg-violet-500/10 text-violet-400">
-                <DocumentDuplicateIcon className="h-7 w-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-100">다양한 업계 템플릿</h3>
-                <p className="mt-1 text-slate-400">디자인, 개발부터 컨설팅까지. 검증된 다양한 업계 표준 템플릿을 제공합니다.</p>
-              </div>
-            </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 flex space-x-6">
-              <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-lg bg-pink-500/10 text-pink-400">
-                <ScaleIcon className="h-7 w-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-slate-100">법적 안정성 확보</h3>
-                <p className="mt-1 text-slate-400">표준화된 계약서 양식으로 구두 계약이나 불분명한 합의로 인한 법적 분쟁을 원천 차단합니다.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="py-20 sm:py-24">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-            <div className="max-w-5xl mx-auto text-center bg-gradient-to-br from-primary-600/20 to-cyan-600/20 p-10 rounded-2xl border border-primary-500/30">
-              <h2 className="text-3xl font-extrabold text-slate-100">이제, 계약 때문에 불안해하지 마세요.</h2>
-              <p className="mt-4 text-lg text-slate-300">
-                FreeZone과 함께 당신의 소중한 시간과 노력을 지키고, <br/>일에만 온전히 집중하는 즐거움을 되찾으세요.
-              </p>
-              <div className="mt-8">
-                  <button 
-                    onClick={onGoToContract} 
-                    className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-lg font-bold rounded-full text-white bg-primary-600 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-primary-500 transition-all transform hover:scale-105">
-                      무료로 계약 시작하기
-                  </button>
-              </div>
-            </div>
-        </div>
-      </section>
-      
-      {/* Contract Print Area - Hidden source for PDF generation */}
-      <div id="contract-print-area" style={{ position: 'fixed', top: 0, left: '-10000px', width: '210mm', backgroundColor: 'white', zIndex: -1 }}>
-           <div style={{ padding: '20mm', backgroundColor: 'white', color: 'black', fontFamily: "'Noto Sans KR', sans-serif", lineHeight: '1.8', wordBreak: 'keep-all' }}>
-            <h1 style={{ textAlign: 'center', fontSize: '26pt', fontWeight: 'bold', marginBottom: '40px', letterSpacing: '-1px' }}>표준 용역 계약서</h1>
-            
-            <p style={{ marginBottom: '30px', textAlign: 'justify' }}>본 계약은 <strong>{getFormattedDate(formData.contractDate)}</strong>, 의뢰인 <strong>"{formData.clientName || ''}"</strong>(이하 "갑")과 작업자 <strong>"{formData.freelancerName || ''}"</strong>(이하 "을") 간에 다음과 같이 체결되었다.</p>
-            
-            <div style={{ marginBottom: '40px' }}>
-                 <table style={{ borderCollapse: 'collapse', fontSize: '11pt', lineHeight: '1.8' }}>
-                    <tbody>
-                        <tr>
-                            <td style={{ width: '90px', fontWeight: 'bold', verticalAlign: 'top' }}>의뢰인 (갑)</td>
-                            <td style={{ width: '15px', verticalAlign: 'top' }}>:</td>
-                            <td>{formData.clientName || ''}</td>
-                        </tr>
-                        <tr>
-                            <td style={{ width: '90px', fontWeight: 'bold', verticalAlign: 'top' }}>작업자 (을)</td>
-                            <td style={{ width: '15px', verticalAlign: 'top' }}>:</td>
-                            <td>{formData.freelancerName || ''}</td>
-                        </tr>
-                    </tbody>
-                 </table>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 1 조 (목적)</h2>
-                    <p style={{ textAlign: 'justify' }}>
-                        본 계약은 "갑"이 의뢰한 <strong>‘{formData.projectName || '(프로젝트명)'}’</strong>(이하 "본 용역")을 "을"이 수행하고, "갑"이 이에 대한 대가를 지급함에 있어 필요한 제반 사항을 규정함을 목적으로 한다.
-                    </p>
-                </section>
-
-                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 2 조 (용역의 범위 및 내용)</h2>
-                    <p style={{ marginBottom: '5px' }}>"을"이 수행할 용역의 범위는 다음 각 호와 같다.</p>
-                    <ol style={{ listStyleType: 'decimal', marginLeft: '20px' }}>
-                        <li style={{ marginBottom: '5px' }}><strong>주요 과업:</strong> {formData.task}</li>
-                        <li style={{ marginBottom: '5px' }}><strong>최종 산출물:</strong>
-                            <ul style={{ listStyleType: 'none', paddingLeft: '0', marginLeft: '20px', marginTop: '5px' }}>
-                                {formData.deliverables.length > 0 ? formData.deliverables.map((d, i) => <li key={i}>- {d}</li>) : <li>- (산출물 없음)</li>}
-                            </ul>
-                        </li>
-                        <li><strong>상세 내용:</strong> <div style={{ whiteSpace: 'pre-wrap', marginTop: '5px', textAlign: 'justify' }}>{clauses.scope || '(내용 없음)'}</div></li>
-                    </ol>
-                </section>
-
-                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 3 조 (계약 기간)</h2>
-                    <p>본 용역의 수행 기간은 <strong>{getFormattedDate(formData.startDate)}</strong>부터 <strong>{getFormattedDate(formData.endDate)}</strong>까지로 한다.</p>
-                </section>
-
-                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 4 조 (계약 금액 및 지급 방법)</h2>
-                    <ol style={{ listStyleType: 'decimal', marginLeft: '20px' }}>
-                        <li style={{ marginBottom: '5px' }}><strong>총 계약 금액:</strong> 일금 {numberToKoreanWon(formData.projectValue)} 원정 (₩{formData.projectValue.toLocaleString()}), 부가가치세 별도</li>
-                        <li><strong>지급 방법:</strong>
-                             <div style={{ whiteSpace: 'pre-wrap', marginTop: '10px', textAlign: 'justify' }}>{clauses.payment || CLAUSE_PLACEHOLDERS.payment}</div>
-                        </li>
-                    </ol>
-                </section>
-
-                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 5 조 (수정 및 검수)</h2>
-                    <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.revisions || CLAUSE_PLACEHOLDERS.revisions}</div>
-                </section>
-
-                <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 6 조 (지식재산권의 귀속)</h2>
-                    <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.ip || CLAUSE_PLACEHOLDERS.ip}</div>
-                </section>
-                
-                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 7 조 (상호 협조 및 소통)</h2>
-                    <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.feedback || CLAUSE_PLACEHOLDERS.feedback}</div>
-                </section>
-
-                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 8 조 (계약의 해지)</h2>
-                    <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.termination || CLAUSE_PLACEHOLDERS.termination}</div>
-                </section>
-
-                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 9 조 (비밀유지)</h2>
-                    <div style={{ whiteSpace: 'pre-wrap', textAlign: 'justify' }}>{clauses.review || CLAUSE_PLACEHOLDERS.review}</div>
-                </section>
-
-                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 10 조 (분쟁의 해결)</h2>
-                    <div style={{ textAlign: 'justify' }}>본 계약과 관련하여 분쟁이 발생한 경우 당사자 간의 합의에 의해 해결함을 원칙으로 하며, 합의가 이루어지지 않을 경우 "갑"의 소재지를 관할하는 법원을 전속 관할 법원으로 한다.</div>
-                </section>
-
-                 <section style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                    <h2 style={{ fontSize: '13pt', fontWeight: 'bold', marginBottom: '10px' }}>제 11 조 (기타)</h2>
-                    <div style={{ textAlign: 'justify' }}>본 계약에 명시되지 않은 사항은 상관례 및 관계 법령에 따른다.</div>
-                </section>
-            </div>
-
-            <div style={{ marginTop: '60px', paddingTop: '40px', borderTop: '2px solid black', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                <p style={{ textAlign: 'center', marginBottom: '50px', fontSize: '14pt', fontWeight: 'bold' }}>{getFormattedDate(formData.contractDate)}</p>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '40px' }}>
-                    {/* Client Block */}
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ fontSize: '12pt', fontWeight: 'bold', marginBottom: '20px' }}>의뢰인 (갑)</h3>
-                        
-                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '10px' }}>
-                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>성명/상호</span>
-                            <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.clientName}</span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '10px' }}>
-                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>연락처</span>
-                             {formData.clientContact ? (
-                                <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.clientContact}</span>
-                             ) : (
-                                <span style={{ borderBottom: '1px solid #dddddd', flex: 1, height: '18px' }}></span>
-                             )}
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '20px' }}>
-                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>주 소</span>
-                            {formData.clientAddress ? (
-                                <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.clientAddress}</span>
-                             ) : (
-                                <span style={{ borderBottom: '1px solid #dddddd', flex: 1, height: '18px' }}></span>
-                             )}
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '20px', color: '#999999' }}>
-                             <span style={{ fontSize: '10pt' }}>(서명/인)</span>
-                        </div>
-                    </div>
-
-                    {/* Freelancer Block */}
-                    <div style={{ flex: 1 }}>
-                        <h3 style={{ fontSize: '12pt', fontWeight: 'bold', marginBottom: '20px' }}>작업자 (을)</h3>
-                        
-                         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '10px' }}>
-                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>성명/상호</span>
-                            <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.freelancerName}</span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '10px' }}>
-                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>연락처</span>
-                             {formData.freelancerContact ? (
-                                <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.freelancerContact}</span>
-                             ) : (
-                                <span style={{ borderBottom: '1px solid #dddddd', flex: 1, height: '18px' }}></span>
-                             )}
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: '20px' }}>
-                            <span style={{ width: '70px', fontWeight: 'bold', fontSize: '10pt' }}>주 소</span>
-                            {formData.freelancerAddress ? (
-                                <span style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: '11pt', flex: 1 }}>{formData.freelancerAddress}</span>
-                             ) : (
-                                <span style={{ borderBottom: '1px solid #dddddd', flex: 1, height: '18px' }}></span>
-                             )}
-                        </div>
-                         
-                         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: '20px', color: '#999999' }}>
-                             <span style={{ fontSize: '10pt' }}>(서명/인)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-             <div style={{ marginTop: '50px', textAlign: 'center', fontSize: '9pt', color: '#9ca3af' }}>
-                본 계약서는 FreeZone 서비스를 통해 작성되었습니다.
-            </div>
-      </div>
-    </div>
-  );
+    );
 };

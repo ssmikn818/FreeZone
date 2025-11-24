@@ -36,7 +36,11 @@ const App: React.FC = () => {
         onGoToContract={handleGoToContract} 
       />
       <main className="flex-grow">
-        <LandingPage contractRef={contractRef} onGoToContract={handleGoToContract} />
+        <LandingPage 
+          contractRef={contractRef} 
+          onGoToContract={handleGoToContract} 
+          onSelectTab={handleSelectTab} 
+        />
       </main>
       <Footer onGoToHome={() => handleSelectTab(Tab.Home)} onGoToContract={handleGoToContract} />
     </div>
