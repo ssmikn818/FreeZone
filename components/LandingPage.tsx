@@ -289,6 +289,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ contractRef, onGoToCon
     const [infoStep, setInfoStep] = useState(0);
     const [clauseStep, setClauseStep] = useState(0);
     const [showAnalysisModal, setShowAnalysisModal] = useState(false); // New: Modal State
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     
     const [formData, setFormData] = useState({
         clientName: '',
@@ -542,71 +543,90 @@ ${formattedDate}
             return;
         }
 
-        // Create a temporary container for the PDF generation
-        const container = document.createElement('div');
-        
-        // Position it visibly in the DOM but behind everything else
-        // This avoids blank page issues common with off-screen rendering in html2canvas
-        container.style.position = 'absolute';
-        container.style.top = '0';
-        container.style.left = '0';
-        container.style.width = '210mm';
-        container.style.zIndex = '-9999';
-        container.style.backgroundColor = 'white';
-        
-        const clone = element.cloneNode(true) as HTMLElement;
-        clone.id = 'contract-print-clone';
-        
-        // Reset styles on clone to ensure it displays correctly in the container
-        clone.style.position = 'static'; 
-        clone.style.left = 'auto';
-        clone.style.top = 'auto';
-        clone.style.display = 'block';
-        clone.style.transform = 'none';
-        clone.style.margin = '0 auto';
-        
-        container.appendChild(clone);
-        document.body.appendChild(container);
+        // 1. Start loading state
+        setIsGeneratingPdf(true);
 
-        const safeProjectName = formData.projectName.trim().replace(/[^a-zA-Z0-9가-힣\s]/g, '') || '프로젝트';
-        const filename = `${safeProjectName}_표준계약서.pdf`;
+        // 2. Wait for state update, then takeover screen
+        setTimeout(() => {
+            // Save original styles
+            const originalStyle = element.getAttribute('style') || '';
+            const innerDiv = element.querySelector('div');
+            const originalInnerStyle = innerDiv ? innerDiv.getAttribute('style') || '' : '';
 
-        const opt = {
-            margin: 0,
-            filename: filename,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-                scale: 2, 
-                logging: false,
-                useCORS: true, 
-                windowWidth: 800,
-                scrollY: 0 // Important: Capture from top of the document
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+            // Apply "Screen Takeover" styles
+            // Force visibility and top-level positioning
+            element.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                z-index: 99999;
+                background-color: white;
+                overflow-y: auto;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+            `;
 
-        // @ts-ignore
-        if (window.html2pdf) {
+            // Adjust inner content to look like A4 paper in the center
+            if (innerDiv) {
+                innerDiv.style.cssText = `
+                    width: 210mm;
+                    min-height: 297mm;
+                    background-color: white;
+                    padding: 20mm;
+                    box-shadow: none;
+                    margin: 0 auto;
+                `;
+            }
+
+            const safeProjectName = formData.projectName.trim().replace(/[^a-zA-Z0-9가-힣\s]/g, '') || '프로젝트';
+            const filename = `${safeProjectName}_표준계약서.pdf`;
+
+            const opt = {
+                margin: 0,
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2, 
+                    logging: false, 
+                    useCORS: true, 
+                    scrollY: 0,
+                    windowWidth: document.documentElement.clientWidth // Capture viewport width
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
             // @ts-ignore
-            window.html2pdf().set(opt).from(container).save()
-                .then(() => {
-                    if(document.body.contains(container)) {
-                         document.body.removeChild(container);
-                    }
-                })
-                .catch((err: any) => {
-                    console.error(err);
-                    alert("PDF 생성 중 오류가 발생했습니다.");
-                    if(document.body.contains(container)) {
-                         document.body.removeChild(container);
-                    }
-                });
-        } else {
-             alert("PDF 생성 라이브러리를 로드하는 중입니다. 잠시 후 다시 시도해주세요.");
-             if(document.body.contains(container)) {
-                  document.body.removeChild(container);
-             }
-        }
+            if (window.html2pdf) {
+                // @ts-ignore
+                window.html2pdf().set(opt).from(element).save()
+                    .then(() => {
+                        // Success
+                    })
+                    .catch((err: any) => {
+                        console.error(err);
+                        alert("PDF 생성 중 오류가 발생했습니다.");
+                    })
+                    .finally(() => {
+                        // Restore styles
+                        element.setAttribute('style', originalStyle);
+                        if (innerDiv) {
+                            innerDiv.setAttribute('style', originalInnerStyle);
+                        }
+                        setIsGeneratingPdf(false);
+                    });
+            } else {
+                alert("PDF 생성 라이브러리를 로드하는 중입니다. 잠시 후 다시 시도해주세요.");
+                // Restore styles
+                element.setAttribute('style', originalStyle);
+                if (innerDiv) {
+                    innerDiv.setAttribute('style', originalInnerStyle);
+                }
+                setIsGeneratingPdf(false);
+            }
+        }, 100);
     };
 
     const handleCopyKakao = () => {
@@ -710,6 +730,15 @@ ${formattedDate}
 
   return (
     <div className="bg-slate-950 text-slate-300">
+      {/* PDF Generation Overlay */}
+      {isGeneratingPdf && (
+        <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center bg-white">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-600 mb-4"></div>
+            <h2 className="text-2xl font-bold text-slate-900">계약서 PDF 생성 중...</h2>
+            <p className="text-slate-500 mt-2">잠시만 기다려주세요.</p>
+        </div>
+      )}
+
       {/* Analysis Modal Overlay */}
       {showAnalysisModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
@@ -1002,7 +1031,7 @@ ${formattedDate}
                         </div>
 
                         {/* Sending Helper Section - Yellow Theme & One-line layout */}
-                        <div className="w-full bg-yellow-50 rounded-xl p-3 border border-yellow-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="w-full bg-yellow-50 rounded-xl p-3 border border-yellow-200 flex flex-col sm:flex-row items-center justify-between gap-3 max-w-lg">
                             <div className="text-center sm:text-left flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                                 <span className="text-sm font-bold text-slate-800 whitespace-nowrap">계약서를 보내시나요?</span>
                                 <span className="text-xs text-slate-600 sm:truncate">파일만 덜렁 보내기 민망하다면 활용해보세요.</span>
@@ -1125,7 +1154,7 @@ ${formattedDate}
         </div>
       </section>
       
-      {/* Contract Print Area - Moved to bottom and using fixed positioning to avoid layout issues */}
+      {/* Contract Print Area - Hidden source for PDF generation */}
       <div id="contract-print-area" style={{ position: 'fixed', top: 0, left: '-10000px', width: '210mm', backgroundColor: 'white', zIndex: -1 }}>
            <div style={{ padding: '20mm', backgroundColor: 'white', color: 'black', fontFamily: 'Batang, serif', lineHeight: '1.6', wordBreak: 'keep-all' }}>
             <h1 style={{ textAlign: 'center', fontSize: '24pt', fontWeight: 'bold', marginBottom: '30px', borderBottom: '2px solid black', paddingBottom: '10px' }}>용역 계약서</h1>
